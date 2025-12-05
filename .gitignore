@@ -1,7 +1,9 @@
 # Logs
+*.log
 
 # Environment and config (if using .env in future)
 .env
+includes/config.php
 
 # OS files
 .DS_Store
