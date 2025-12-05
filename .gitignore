@@ -1,0 +1,27 @@
+# Logs
+
+# Environment and config (if using .env in future)
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+tmp/
+temp/
+cache/
+
+# Backup files
+*.bak
+*.backup
+*~

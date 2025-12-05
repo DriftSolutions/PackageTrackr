@@ -1,0 +1,29 @@
+<?php
+// Site Configuration
+define('SITE_NAME', 'PackageTrackr');
+
+// Database Configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'tracking');
+define('DB_PASS', '');
+define('DB_NAME', 'tracking');
+
+// Timezone
+date_default_timezone_set('America/New_York');
+
+// Email Configuration
+define('EMAIL_FROM_NAME', SITE_NAME);
+define('EMAIL_FROM', 'noreply@packagetrackr.app');
+define('TRACKING_EMAIL', 'tracking@packagetrackr.app');
+
+// hCaptcha Configuration
+define('HCAPTCHA_SITEKEY', '');
+define('HCAPTCHA_SECRET', '');
+
+// Session Configuration
+define('SESSION_TIMEOUT', 30 * 24 * 60 * 60); // 30 days in seconds
+define('VERIFICATION_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
+define('PASSWORD_RESET_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
+
+// Load function files
+require_once __DIR__ . '/functions.inc.php';

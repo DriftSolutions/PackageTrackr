@@ -1,0 +1,60 @@
+# Enable rewrite engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Skip rewrite for webhook.php and public auth pages
+    RewriteRule ^webhook\.php$ - [L]
+    RewriteRule ^login\.php$ - [L]
+    RewriteRule ^register\.php$ - [L]
+    RewriteRule ^verify-email\.php$ - [L]
+    RewriteRule ^logout\.php$ - [L]
+
+    # Redirect to index.php if file doesn't exist and not a directory
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?$1 [L,QSA]
+</IfModule>
+
+# Session-based authentication (handled in PHP via auth.php)
+# Public pages: login.php, register.php, verify-email.php, logout.php, webhook.php
+# Protected pages: All others require session authentication via auth.php requireAuth()
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "^(config\.php|\.env|\.git)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect log files
+#<DirectoryMatch "logs">
+#    Order allow,deny
+#    Deny from all
+#</DirectoryMatch>
+
+# PHP settings
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# Cache static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
