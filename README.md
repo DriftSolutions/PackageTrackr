@@ -2,6 +2,8 @@
 
 A self-hosted package tracking application that provides real-time updates for your shipments. This project serves as a replacement for packagetrackr.com, which is no longer maintained. I didn't want to invest a ton of time in this so Claude made about 95% of it, but it seems secure enough.
 
+I have a public instance running at https://packagetrackr.app/ if you'd rather use it than run it yourself.
+
 ## Overview
 
 PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoing packages. It integrates with the 17track API to provide comprehensive tracking information for packages from multiple carriers including UPS, USPS, FedEx, and YunExpress.
