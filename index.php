@@ -79,6 +79,14 @@ function getStatusClass($status) {
         .navbar-brand {
             font-family: 'IBM Plex Sans', sans-serif;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand img {
+            height: 24px;
+            width: 24px;
         }
 
         .view-tabs .nav-link {
@@ -301,7 +309,8 @@ function getStatusClass($status) {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container d-flex align-items-center">
             <a class="navbar-brand" href="index.php">
-                <i class="bi bi-box-seam"></i> <?= SITE_NAME ?>
+                <img src="favicon.png" alt="<?= SITE_NAME ?> Logo">
+                <?= SITE_NAME ?>
             </a>
             <div class="ms-auto d-flex gap-2 align-items-center">
                 <div class="dropdown">
