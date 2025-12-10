@@ -82,6 +82,7 @@ logMessage("Found " . count($emails) . " unread email(s)");
 
 $addedCount = 0;
 $skippedCount = 0;
+$domain = substr(TRACKING_EMAIL, strpos(TRACKING_EMAIL, '@') + 1);
 
 foreach ($emails as $emailNum) {
     $header = imap_headerinfo($imap, $emailNum);
@@ -127,7 +128,7 @@ foreach ($emails as $emailNum) {
     $body = getEmailBody($imap, $emailNum);
 
     // Extract tracking numbers from email body
-    $trackingNumbers = extractTrackingNumbers($body);
+    $trackingNumbers = extractTrackingNumbers($subject."\n".$body);
 
     if (empty($trackingNumbers)) {
         logMessage("  No tracking numbers found in email");
@@ -154,8 +155,9 @@ foreach ($emails as $emailNum) {
 
 	$addsubject = $subject;
 	if ($from_fedex && stristr($subject, 'Your shipment is on the way') !== FALSE) {
+		$company = '';
 		$n = stripos($body, '>Your shipment from');
-		$n2 = strpos($body, 'is on the way', (int)$n);
+		$n2 = stripos($body, 'is on the way', (int)$n);
 		if ($n !== FALSE && $n2 !== FALSE) {
 			$n += 19;
 			$company = ucwords(strtolower(trim(substr($body, $n, min(100, $n2 - $n)))));
@@ -163,11 +165,18 @@ foreach ($emails as $emailNum) {
 				$company = 'Lowe\'s';
 			}
 			$addsubject = 'FedEx: '.$company;
-//			print "subject: $addsubject\n";
-//		} else if (stristr($body, 'Amazon.com') !== FALSE) {
-//			$addsubject = 'FedEx: Amazon.com';
 		}
 //		file_put_contents('logs/ups.txt', $body);
+		$n = stripos($body, '>We have a scheduled delivery date for your shipment from');
+		$n2 = stripos($body, '.</p>', (int)$n);
+		if (empty($company) && $n !== FALSE && $n2 !== FALSE) {
+			$n += 57;
+			$company = ucwords(strtolower(trim(substr($body, $n, min(100, $n2 - $n)))));
+			if ($company == 'Lowe\'s Companies, Inc.') {
+				$company = 'Lowe\'s';
+			}
+			$addsubject = 'FedEx: '.$company;
+		}
 	}
 	if (stristr($subject, 'UPS Update:') !== FALSE) {
 		$n = stripos($body, 'From <strong>');
@@ -188,7 +197,11 @@ foreach ($emails as $emailNum) {
             logMessage("    ✓ Successfully added");
             $addedCount++;
             $newlyAdded++;
-            $addedmsg .= "{$carrier}: {$trackingNumber}\n";
+
+            // Extract domain from TRACKING_EMAIL for link
+            $trackingLink = "https://{$domain}/?highlight=" . urlencode($trackingNumber);
+
+            $addedmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
         } else {
             // Check if the error is about the tracking number already existing
             if (stristr($result['error'], 'already exists') !== FALSE) {
@@ -358,15 +371,14 @@ function extractTrackingNumbers($text) {
     }
 
     // 12 digits - most generic, so check last to avoid false positives
+    // Note: USPS numbers with 70/14/23/03 prefixes are 16 digits, and 94/93/92/95 are 22 digits
+    // So any 12-digit number starting with these prefixes is FedEx, not USPS
     preg_match_all('/\b([0-9]{12})\b/', $text, $fedexMatches1);
     foreach ($fedexMatches1[1] as $match) {
-        // Skip if already matched as USPS (patterns: 70, 14, 23, 03, 94, 93, 92, 95)
-        if (!preg_match('/^(70|14|23|03|94|93|92|95)/', $match)) {
-            $trackingNumbers[] = [
-                'carrier' => 'FedEx',
-                'number' => $match
-            ];
-        }
+        $trackingNumbers[] = [
+            'carrier' => 'FedEx',
+            'number' => $match
+        ];
     }
 
     // Remove duplicates and return

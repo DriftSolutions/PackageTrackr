@@ -303,6 +303,23 @@ function getStatusClass($status) {
             margin-right: 8px;
             color: #666;
         }
+
+        /* Highlight animation for tracking card */
+        @keyframes highlightPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(7, 193, 255, 0);
+                border-color: rgba(0, 0, 0, 0.125);
+            }
+            50% {
+                box-shadow: 0 0 20px 5px rgba(7, 193, 255, 0.6);
+                border-color: #07c1ff;
+            }
+        }
+
+        .card.highlighted {
+            animation: highlightPulse 2s ease-in-out 3;
+            scroll-margin-top: 100px;
+        }
     </style>
 </head>
 <body>
@@ -472,7 +489,7 @@ function getStatusClass($status) {
                         $dateClass = 'no-estimate';
                     }
                     ?>
-                    <div class="card mb-3 <?= $cardClass ?>" data-tracking-id="<?= $tracking['id'] ?>">
+                    <div class="card mb-3 <?= $cardClass ?>" data-tracking-id="<?= $tracking['id'] ?>" data-tracking-number="<?= htmlspecialchars($tracking['tracking_number']) ?>">
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-auto">
@@ -659,5 +676,32 @@ if (!empty($tracking['sub_status'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Handle highlight parameter to scroll to and highlight a specific tracking number
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightTracking = urlParams.get('highlight');
+
+            if (highlightTracking) {
+                // Find the card with this tracking number
+                const cards = document.querySelectorAll('[data-tracking-number]');
+                for (const card of cards) {
+                    if (card.dataset.trackingNumber === highlightTracking) {
+                        // Scroll to the card with some delay to ensure page is fully loaded
+                        setTimeout(() => {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            card.classList.add('highlighted');
+
+                            // Remove the highlighted class after animation completes
+                            setTimeout(() => {
+                                card.classList.remove('highlighted');
+                            }, 6000); // 3 pulses × 2 seconds
+                        }, 500);
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

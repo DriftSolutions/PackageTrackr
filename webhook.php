@@ -234,7 +234,8 @@ function processTrackingUpdate($trackingData, $user_id) {
             $updates['sub_status'] = $parsedData['sub_status'];
         }
 
-        if ($parsedData['estimated_delivery_date']) {
+        // Always update estimated_delivery_date if present in parsed data (even if null)
+        if (array_key_exists('estimated_delivery_date', $parsedData)) {
             $updates['estimated_delivery_date'] = $parsedData['estimated_delivery_date'];
         }
 
