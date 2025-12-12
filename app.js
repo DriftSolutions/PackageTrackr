@@ -121,17 +121,6 @@ function updatePackageName(trackingId, packageName) {
 
 // Move tracking number to different view
 function moveToView(trackingId, view) {
-    const viewNames = {
-        'current': 'Current',
-        'archive': 'Archive',
-        'trash': 'Trash'
-    };
-
-    // Only confirm when moving to trash
-    if (view === 'trash' && !confirm(`Move this package to ${viewNames[view]}?`)) {
-        return;
-    }
-
     const formData = new FormData();
     formData.append('action', 'move');
     formData.append('id', trackingId);

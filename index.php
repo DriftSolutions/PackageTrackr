@@ -325,7 +325,7 @@ function getStatusClass($status) {
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container d-flex align-items-center">
-            <a class="navbar-brand" href="index.php">
+            <a class="navbar-brand" href="/">
                 <img src="favicon.png" alt="<?= SITE_NAME ?> Logo">
                 <?= SITE_NAME ?>
             </a>

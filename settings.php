@@ -124,7 +124,7 @@ $secret = getUserSetting($user_id, '17track_secret', '');
 </head>
 <body style="background-color: #f8f9fa;">
     <div class="settings-container">
-        <a href="index.php" class="back-link"><i class="bi bi-arrow-left"></i> Back to Tracking</a>
+        <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Tracking</a>
 
         <div class="settings-card">
             <h2><i class="bi bi-gear"></i> Settings</h2>
