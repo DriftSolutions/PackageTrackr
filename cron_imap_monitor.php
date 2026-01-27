@@ -127,6 +127,13 @@ foreach ($emails as $emailNum) {
     // Get the email body, properly handling MIME structure
     $body = getEmailBody($imap, $emailNum);
 
+	if (stristr($body, 'shipment-tracking@amazon.com') !== FALSE) {
+		print "Skipping Amazon email...\n";
+	        imap_setflag_full($imap, $emailNum, "\\Seen");
+	        imap_delete($imap, $emailNum);
+	        continue;
+	}
+
     // Extract tracking numbers from email body
     $trackingNumbers = extractTrackingNumbers($subject."\n".$body);
 
@@ -146,6 +153,7 @@ foreach ($emails as $emailNum) {
 
     // Add each tracking number
 	$addedmsg = '';
+	$existsmsg = '';
 	$newlyAdded = 0;
     foreach ($trackingNumbers as $trackingInfo) {
         $carrier = $trackingInfo['carrier'];
@@ -189,23 +197,25 @@ foreach ($emails as $emailNum) {
 		}
 	}
 
+        // Extract domain from TRACKING_EMAIL for link
+        $trackingLink = "https://{$domain}/?highlight=" . urlencode($trackingNumber);
+
         $result = addTrackingNumber($userId, $trackingNumber, $carrier, $addsubject);
 
         if ($result['success']) {
+            $trackingNumberId = $result['id']; // Store ID before it gets overwritten
             logMessage("    Registering with 17track...");
-            $result = register17TrackNumber($userId, $trackingNumber, $carrier);
+            $registerResult = register17TrackNumber($userId, $trackingNumber, $carrier);
             logMessage("    ✓ Successfully added");
             $addedCount++;
             $newlyAdded++;
-
-            // Extract domain from TRACKING_EMAIL for link
-            $trackingLink = "https://{$domain}/?highlight=" . urlencode($trackingNumber);
 
             $addedmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
         } else {
             // Check if the error is about the tracking number already existing
             if (stristr($result['error'], 'already exists') !== FALSE) {
                 logMessage("    ℹ Already exists");
+	        $existsmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
                 // Don't add to message for already existing tracking numbers
             } else {
                 logMessage("    ✗ " . $result['error']);
@@ -218,6 +228,10 @@ foreach ($emails as $emailNum) {
 	if ($newlyAdded > 0) {
 		$prefix = "Found " . $newlyAdded . " new tracking number(s) in email " . $subject . ":\n\n";
 		send_email($fromAddress, 'Tracking Number(s) Added', $prefix . $addedmsg);
+		logMessage("  Sent notification email to $fromAddress");
+	} else if (!empty($existsmsg)) {
+		$prefix = "Found already existing tracking number(s) in email " . $subject . ":\n\n";
+		send_email($fromAddress, 'Found Existing Tracking Number(s)', $prefix . $existsmsg);
 		logMessage("  Sent notification email to $fromAddress");
 	}
 
@@ -319,6 +333,25 @@ function extractTrackingNumbers($text) {
     foreach ($upsMatches[1] as $match) {
         $trackingNumbers[] = [
             'carrier' => 'UPS',
+            'number' => strtoupper($match)
+        ];
+    }
+
+    // China Post patterns
+    // Format 1: 2 letters + 9 digits + CN (e.g., RA123456789CN)
+    preg_match_all('/\b([A-Z]{2}[0-9]{9}CN)\b/i', $text, $chinaPostMatches1);
+    foreach ($chinaPostMatches1[1] as $match) {
+        $trackingNumbers[] = [
+            'carrier' => 'China Post',
+            'number' => strtoupper($match)
+        ];
+    }
+
+    // Format 2: ZC followed by 11 digits (e.g., ZC59828236999)
+    preg_match_all('/\b(ZC[0-9]{11})\b/i', $text, $chinaPostMatches2);
+    foreach ($chinaPostMatches2[1] as $match) {
+        $trackingNumbers[] = [
+            'carrier' => 'China Post',
             'number' => strtoupper($match)
         ];
     }

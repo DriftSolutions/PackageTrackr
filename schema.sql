@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT DEFAULT NULL,
     tracking_number VARCHAR(255) NOT NULL,
-    carrier ENUM('UPS', 'USPS', 'FedEx', 'YunExpress', 'Amazon') NOT NULL,
+    carrier ENUM('UPS', 'USPS', 'FedEx', 'YunExpress', 'Amazon', 'China Post') NOT NULL,
     package_name VARCHAR(255) DEFAULT NULL,
     status VARCHAR(100) DEFAULT 'Information Received',
     raw_status VARCHAR(100) DEFAULT 'InfoReceived',

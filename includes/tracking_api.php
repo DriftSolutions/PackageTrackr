@@ -165,7 +165,8 @@ function get17TrackCarrierCode($carrier) {
         'USPS' => 21051,
         'FedEx' => 100003,
         'YunExpress' => 190008,
-        'Amazon' => 100308
+        'Amazon' => 100308,
+        'China Post' => 3011
     ];
 
     return $carrierMap[$carrier] ?? 0; // 0 = auto-detect
@@ -427,6 +428,7 @@ function getCarrierLogo($carrier) {
         'FedEx' => 'images/fedex.png',
         'YunExpress' => 'images/yunexpress.png',
         'Amazon' => 'images/amazon.png',
+        'China Post' => 'images/chinapost.png',
     ];
     return $logos[$carrier] ?? '';
 }
@@ -440,6 +442,7 @@ function getTrackingUrl($trackingNumber, $carrier) {
         'USPS' => "https://tools.usps.com/go/TrackConfirmAction?tLabels={$trackingNumber}",
         'FedEx' => "https://www.fedex.com/fedextrack/?trknbr={$trackingNumber}",
         'YunExpress' => "https://www.yunexpress.com/track/?number={$trackingNumber}",
+        'China Post' => "https://www.17track.net/?nums={$trackingNumber}",
 //        'Amazon' => "https://www.amazon.com/gp/tracking.html?tracking-id={$trackingNumber}"
     ];
 

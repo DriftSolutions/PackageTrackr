@@ -281,6 +281,15 @@ function detectCarrier($trackingNumber) {
         return 'UPS';
     }
 
+    // China Post: Multiple formats (check before USPS to avoid conflicts)
+    // Format 1: 2 letters + 9 digits + CN (e.g., RA123456789CN)
+    // Format 2: ZC followed by 11 digits (e.g., ZC59828236999)
+    if (preg_match('/^[A-Z]{2}[0-9]{9}CN$/', $trackingNumber) ||
+        preg_match('/^ZC[0-9]{11}$/', $trackingNumber)) {
+        error_log("detectCarrier: Detected China Post");
+        return 'China Post';
+    }
+
     // USPS: Various formats
     if (preg_match('/^(94|93|92|94|95)[0-9]{20}$/', $trackingNumber) ||
         preg_match('/^(70|14|23|03)[0-9]{14}$/', $trackingNumber) ||
