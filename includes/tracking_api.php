@@ -211,7 +211,10 @@ function parseTrackInfo($tracking) {
     } elseif (isset($trackInfo['time_metrics']['estimated_delivery_date']['to'])) {
         // Fallback to 'to' field if 'from' is not available
         $result['estimated_delivery_date'] = parseApiDate($trackInfo['time_metrics']['estimated_delivery_date']['to']);
+    } else {
+        $result['estimated_delivery_date'] = null;
     }
+//error_log(print_r($result, TRUE));
 
     // Log what we found for debugging
     if (empty($result['estimated_delivery_date'])) {
@@ -380,11 +383,13 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
         $updateData['sub_status'] = $parsedData['sub_status'];
     }
 
-    if ($parsedData['estimated_delivery_date']) {
+    // Always update estimated_delivery_date if present in parsed data (even if null)
+    if (array_key_exists('estimated_delivery_date', $parsedData)) {
         $updateData['estimated_delivery_date'] = $parsedData['estimated_delivery_date'];
     }
 
-    if ($parsedData['delivered_date']) {
+    // Always update delivered_date if present in parsed data (even if null)
+    if (array_key_exists('delivered_date', $parsedData)) {
         $updateData['delivered_date'] = $parsedData['delivered_date'];
     }
 
