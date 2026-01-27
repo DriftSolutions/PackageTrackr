@@ -24,7 +24,7 @@
 Options -Indexes
 
 # Protect sensitive files
-<FilesMatch "^(config\.php|\.env|\.git)">
+<FilesMatch "^(config\.php|\.env|\.git|\.claude)">
     Order allow,deny
     Deny from all
 </FilesMatch>

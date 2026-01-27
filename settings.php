@@ -14,13 +14,18 @@ $success = '';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $apiKey = $_POST['17track_api_key'] ?? '';
+    $claudeApiKey = $_POST['claude_api_key'] ?? '';
 
     if (empty($apiKey)) {
         $error = '17track Security Key is required';
     } else {
-        // Save API key
+        // Save 17track API key
         $setApiKey = setUserSetting($user_id, '17track_api_key', $apiKey);
-        if ($setApiKey) {
+
+        // Save Claude API key (can be empty)
+        $setClaudeKey = setUserSetting($user_id, 'claude_api_key', $claudeApiKey);
+
+        if ($setApiKey && $setClaudeKey) {
             $success = 'Settings saved successfully';
         } else {
             $error = 'Failed to save settings';
@@ -30,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load current settings
 $apiKey = getUserSetting($user_id, '17track_api_key', '');
+$claudeApiKey = getUserSetting($user_id, 'claude_api_key', '');
 $secret = getUserSetting($user_id, '17track_secret', '');
 ?>
 <!DOCTYPE html>
@@ -149,6 +155,21 @@ $secret = getUserSetting($user_id, '17track_secret', '');
                     <label for="apiKey" class="form-label">17track Security Key</label>
                     <input type="password" id="apiKey" name="17track_api_key" class="form-control" required
                            value="<?php echo htmlspecialchars($apiKey); ?>">
+                </div>
+
+                <div>
+                    <label for="claudeApiKey" class="form-label">
+                        Claude API Key (Optional)
+                        <small class="text-muted">- For AI-powered package name generation</small>
+                    </label>
+                    <input type="password" id="claudeApiKey" name="claude_api_key" class="form-control"
+                           value="<?php echo htmlspecialchars($claudeApiKey); ?>"
+                           placeholder="sk-ant-...">
+                    <div class="form-text">
+                        Get your API key from <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a>.
+                        When set, new tracking numbers will automatically get descriptive names based on email content.
+                        Costs approximately $1 per 1,000 packages analyzed.
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-save">Save Settings</button>

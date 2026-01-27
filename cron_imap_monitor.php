@@ -211,6 +211,13 @@ foreach ($emails as $emailNum) {
             $newlyAdded++;
 
             $addedmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
+
+            // If user has Claude API key, queue email for AI analysis
+            $claudeApiKey = getUserSetting($userId, 'claude_api_key', '');
+            if (!empty($claudeApiKey)) {
+                addPendingClaudeAnalysis($trackingNumberId, $userId, $subject, $body);
+                logMessage("    Queued for Claude AI analysis");
+            }
         } else {
             // Check if the error is about the tracking number already existing
             if (stristr($result['error'], 'already exists') !== FALSE) {

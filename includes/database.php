@@ -364,3 +364,79 @@ function setUserSetting($user_id, $key, $value) {
         return false;
     }
 }
+
+// ============================================================================
+// Claude AI Integration Functions
+// ============================================================================
+
+// Queue email for Claude AI analysis
+function addPendingClaudeAnalysis($tracking_number_id, $user_id, $email_subject, $email_body) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("INSERT INTO pending_claude_analysis
+                              (tracking_number_id, user_id, email_subject, email_body, created_at)
+                              VALUES (?, ?, ?, ?, NOW())");
+        return $stmt->execute([$tracking_number_id, $user_id, $email_subject, $email_body]);
+    } catch (PDOException $e) {
+        error_log("Error adding pending Claude analysis: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Get unprocessed Claude analysis records
+function getPendingClaudeAnalysis($limit = 50) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("SELECT * FROM pending_claude_analysis
+                              WHERE processed_at IS NULL
+                              AND processing_attempts < 3
+                              ORDER BY created_at ASC
+                              LIMIT ?");
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Error getting pending Claude analysis: " . $e->getMessage());
+        return [];
+    }
+}
+
+// Mark Claude analysis as processed and delete record
+function markClaudeAnalysisProcessed($id) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("DELETE FROM pending_claude_analysis WHERE id = ?");
+        return $stmt->execute([$id]);
+    } catch (PDOException $e) {
+        error_log("Error marking Claude analysis as processed: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Increment processing attempts on failure
+function incrementClaudeAnalysisAttempts($id, $error_message) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("UPDATE pending_claude_analysis
+                              SET processing_attempts = processing_attempts + 1,
+                                  last_error = ?
+                              WHERE id = ?");
+        return $stmt->execute([$error_message, $id]);
+    } catch (PDOException $e) {
+        error_log("Error incrementing Claude analysis attempts: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Update package name from Claude analysis
+function updatePackageNameFromClaude($tracking_number_id, $package_name) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("UPDATE tracking_numbers
+                              SET package_name = ?
+                              WHERE id = ?");
+        return $stmt->execute([$package_name, $tracking_number_id]);
+    } catch (PDOException $e) {
+        error_log("Error updating package name from Claude: " . $e->getMessage());
+        return false;
+    }
+}
