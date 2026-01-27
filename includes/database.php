@@ -275,6 +275,13 @@ function detectCarrier($trackingNumber) {
         return 'YunExpress';
     }
 
+    // SF Express: SF followed by 12-15 digits, or 12-15 digit number starting with common prefixes
+    if (preg_match('/^SF[0-9]{12,15}$/', $trackingNumber) ||
+        preg_match('/^[0-9]{12}$/', $trackingNumber) && preg_match('/^(268|118|518|688|888|588|388|689)/', $trackingNumber)) {
+        error_log("detectCarrier: Detected SF Express");
+        return 'SF Express';
+    }
+
     // UPS: 1Z followed by 16 alphanumeric characters
     if (preg_match('/^1Z[A-Z0-9]{16}$/', $trackingNumber)) {
         error_log("detectCarrier: Detected UPS");

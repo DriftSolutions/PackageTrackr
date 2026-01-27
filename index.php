@@ -639,6 +639,7 @@ if (!empty($tracking['sub_status'])) {
                                 <option value="USPS">USPS</option>
                                 <option value="FedEx">FedEx</option>
                                 <option value="YunExpress">YunExpress</option>
+                                <option value="SF Express">SF Express</option>
                             </select>
                         </div>
                         <div class="mb-3">
