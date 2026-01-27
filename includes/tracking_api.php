@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'database.php';
+require_once __DIR__ . '/carriers/CarrierRegistry.php';
 
 // Fetch tracking information from 17track.net API
 function fetchTrackingInfo($user_id, $trackingNumber, $carrier) {
@@ -160,17 +161,7 @@ function register17TrackNumber($user_id, $trackingNumber, $carrier) {
 // Convert carrier name to 17track carrier code
 // Codes from: https://res.17track.net/asset/carrier/info/apicarrier.all.json
 function get17TrackCarrierCode($carrier) {
-    $carrierMap = [
-        'UPS' => 100002,
-        'USPS' => 21051,
-        'FedEx' => 100003,
-        'YunExpress' => 190008,
-        'Amazon' => 100308,
-        'China Post' => 3011,
-        'SF Express' => 100161
-    ];
-
-    return $carrierMap[$carrier] ?? 0; // 0 = auto-detect
+    return CarrierRegistry::getInstance()->get17TrackCode($carrier);
 }
 
 // Parse track_info object from 17track (shared between API and webhook)
@@ -423,33 +414,12 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
 
 // Get carrier logo URL
 function getCarrierLogo($carrier) {
-    $logos = [
-        'UPS' => 'images/ups.png',
-        'USPS' => 'images/usps.png',
-        'FedEx' => 'images/fedex.png',
-        'YunExpress' => 'images/yunexpress.png',
-        'Amazon' => 'images/amazon.png',
-        'China Post' => 'images/chinapost.png',
-        'SF Express' => 'images/sfexpress.png',
-    ];
-    return $logos[$carrier] ?? '';
+    return CarrierRegistry::getInstance()->getCarrierLogo($carrier);
 }
 
 // Get tracking URL for a carrier
 function getTrackingUrl($trackingNumber, $carrier) {
-    $trackingNumber = urlencode($trackingNumber);
-
-    $urls = [
-        'UPS' => "https://www.ups.com/track?tracknum={$trackingNumber}",
-        'USPS' => "https://tools.usps.com/go/TrackConfirmAction?tLabels={$trackingNumber}",
-        'FedEx' => "https://www.fedex.com/fedextrack/?trknbr={$trackingNumber}",
-        'YunExpress' => "https://www.yunexpress.com/track/?number={$trackingNumber}",
-        'China Post' => "https://www.17track.net/?nums={$trackingNumber}",
-        'SF Express' => "https://www.sf-express.com/we/ow/chn/en/dynamic_function/waybill/#search/bill-number/{$trackingNumber}",
-//        'Amazon' => "https://www.amazon.com/gp/tracking.html?tracking-id={$trackingNumber}"
-    ];
-
-    return $urls[$carrier] ?? '';
+    return CarrierRegistry::getInstance()->getTrackingUrl($trackingNumber, $carrier);
 }
 
 // Permanent status check

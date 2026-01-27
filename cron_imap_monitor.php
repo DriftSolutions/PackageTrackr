@@ -9,6 +9,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/database.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/tracking_api.php';
+require_once __DIR__ . '/includes/carriers/CarrierRegistry.php';
 
 // Ensure this script only runs from command line/cron, not from browser
 if (php_sapi_name() !== 'cli') {
@@ -324,109 +325,5 @@ function getEmailBody($imap, $emailNum) {
  * Extract tracking numbers from email body
  */
 function extractTrackingNumbers($text) {
-    $trackingNumbers = [];
-
-    // Handle HTML entities and decode them (converts &lt; to <, &gt; to >, etc.)
-    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5);
-
-    // Don't remove HTML tags - tracking numbers may be inside <a> tags or other HTML elements
-    // Just normalize whitespace and leave the content intact
-
-    // Normalize whitespace
-    $text = preg_replace('/\s+/', ' ', $text);
-
-    // UPS pattern: 1Z followed by 16 alphanumeric characters
-    preg_match_all('/\b(1Z[A-Z0-9]{16})\b/i', $text, $upsMatches);
-    foreach ($upsMatches[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'UPS',
-            'number' => strtoupper($match)
-        ];
-    }
-
-    // China Post patterns
-    // Format 1: 2 letters + 9 digits + CN (e.g., RA123456789CN)
-    preg_match_all('/\b([A-Z]{2}[0-9]{9}CN)\b/i', $text, $chinaPostMatches1);
-    foreach ($chinaPostMatches1[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'China Post',
-            'number' => strtoupper($match)
-        ];
-    }
-
-    // Format 2: ZC followed by 11 digits (e.g., ZC59828236999)
-    preg_match_all('/\b(ZC[0-9]{11})\b/i', $text, $chinaPostMatches2);
-    foreach ($chinaPostMatches2[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'China Post',
-            'number' => strtoupper($match)
-        ];
-    }
-
-    // USPS patterns
-    // 20-22 digit format
-    preg_match_all('/\b((?:94|93|92|95)[0-9]{20})\b/', $text, $uspsMatches1);
-    foreach ($uspsMatches1[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'USPS',
-            'number' => $match
-        ];
-    }
-
-    // 13-15 digit format
-    preg_match_all('/\b((?:70|14|23|03)[0-9]{14})\b/', $text, $uspsMatches2);
-    foreach ($uspsMatches2[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'USPS',
-            'number' => $match
-        ];
-    }
-
-    // Letter format
-    preg_match_all('/\b([A-Z]{2}[0-9]{9}[A-Z]{2})\b/', $text, $uspsMatches3);
-    foreach ($uspsMatches3[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'USPS',
-            'number' => $match
-        ];
-    }
-
-    // FedEx patterns - more specific to avoid false matches
-    // 22 digits starting with 96 (most specific)
-    preg_match_all('/\b(96[0-9]{20})\b/', $text, $fedexMatches3);
-    foreach ($fedexMatches3[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'FedEx',
-            'number' => $match
-        ];
-    }
-
-    // 15 digits (check this before 12-digit to prefer longer matches)
-    preg_match_all('/\b([0-9]{15})\b/', $text, $fedexMatches2);
-    foreach ($fedexMatches2[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'FedEx',
-            'number' => $match
-        ];
-    }
-
-    // 12 digits - most generic, so check last to avoid false positives
-    // Note: USPS numbers with 70/14/23/03 prefixes are 16 digits, and 94/93/92/95 are 22 digits
-    // So any 12-digit number starting with these prefixes is FedEx, not USPS
-    preg_match_all('/\b([0-9]{12})\b/', $text, $fedexMatches1);
-    foreach ($fedexMatches1[1] as $match) {
-        $trackingNumbers[] = [
-            'carrier' => 'FedEx',
-            'number' => $match
-        ];
-    }
-
-    // Remove duplicates and return
-    $unique = [];
-    foreach ($trackingNumbers as $tracking) {
-        $key = $tracking['carrier'] . '-' . $tracking['number'];
-        $unique[$key] = $tracking;
-    }
-
-    return array_values($unique);
+    return CarrierRegistry::getInstance()->extractTrackingNumbers($text);
 }

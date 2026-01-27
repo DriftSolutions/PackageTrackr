@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once __DIR__ . '/carriers/CarrierRegistry.php';
 
 // Add a new tracking number
 function addTrackingNumber($user_id, $trackingNumber, $carrier = null, $packageName = null) {
@@ -260,58 +261,11 @@ function detectCarrier($trackingNumber) {
 
     error_log("detectCarrier: Checking tracking number: '{$trackingNumber}'");
 
-    // Amazon: TBA followed by 12-16 numbers (check first to avoid conflicts)
+    $carrier = CarrierRegistry::getInstance()->detectCarrier($trackingNumber);
 
-/*
-    if (preg_match('/^TBA[0-9]{12,16}$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected Amazon");
-        return 'Amazon';
-    }
-*/
-
-    // YunExpress: YT followed by 16 numbers (check early to avoid conflicts)
-    if (preg_match('/^YT[0-9]{16}$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected YunExpress");
-        return 'YunExpress';
-    }
-
-    // SF Express: SF followed by 12-15 digits, or 12-15 digit number starting with common prefixes
-    if (preg_match('/^SF[0-9]{12,15}$/', $trackingNumber) ||
-        preg_match('/^[0-9]{12}$/', $trackingNumber) && preg_match('/^(268|118|518|688|888|588|388|689)/', $trackingNumber)) {
-        error_log("detectCarrier: Detected SF Express");
-        return 'SF Express';
-    }
-
-    // UPS: 1Z followed by 16 alphanumeric characters
-    if (preg_match('/^1Z[A-Z0-9]{16}$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected UPS");
-        return 'UPS';
-    }
-
-    // China Post: Multiple formats (check before USPS to avoid conflicts)
-    // Format 1: 2 letters + 9 digits + CN (e.g., RA123456789CN)
-    // Format 2: ZC followed by 11 digits (e.g., ZC59828236999)
-    if (preg_match('/^[A-Z]{2}[0-9]{9}CN$/', $trackingNumber) ||
-        preg_match('/^ZC[0-9]{11}$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected China Post");
-        return 'China Post';
-    }
-
-    // USPS: Various formats
-    if (preg_match('/^(94|93|92|94|95)[0-9]{20}$/', $trackingNumber) ||
-        preg_match('/^(70|14|23|03)[0-9]{14}$/', $trackingNumber) ||
-        preg_match('/^(M0|82)[0-9]{8}$/', $trackingNumber) ||
-        preg_match('/^([A-Z]{2})[0-9]{9}([A-Z]{2})$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected USPS");
-        return 'USPS';
-    }
-
-    // FedEx: 12 or 15 digits, or starts with 96
-    if (preg_match('/^[0-9]{12}$/', $trackingNumber) ||
-        preg_match('/^[0-9]{15}$/', $trackingNumber) ||
-        preg_match('/^96[0-9]{20}$/', $trackingNumber)) {
-        error_log("detectCarrier: Detected FedEx");
-        return 'FedEx';
+    if ($carrier) {
+        error_log("detectCarrier: Detected " . $carrier->getName());
+        return $carrier->getId();
     }
 
     error_log("detectCarrier: No carrier detected for $trackingNumber");

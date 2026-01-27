@@ -634,12 +634,9 @@ if (!empty($tracking['sub_status'])) {
                         <div class="mb-3">
                             <label for="carrier" class="form-label">Carrier</label>
                             <select class="form-select" id="carrier">
-                                <option value="">Auto-detect</option>
-                                <option value="UPS">UPS</option>
-                                <option value="USPS">USPS</option>
-                                <option value="FedEx">FedEx</option>
-                                <option value="YunExpress">YunExpress</option>
-                                <option value="SF Express">SF Express</option>
+                                <?php foreach (CarrierRegistry::getInstance()->getCarrierOptions() as $option): ?>
+                                <option value="<?= htmlspecialchars($option['value']) ?>"><?= htmlspecialchars($option['label']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="mb-3">
