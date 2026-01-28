@@ -120,10 +120,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 8px;
             color: #333;
         }
+        .site-branding {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #eee;
+        }
+        .site-branding img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 12px;
+        }
+        .site-branding .site-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        .site-branding .tagline {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .open-source-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .open-source-footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .open-source-footer a:hover {
+            text-decoration: underline;
+        }
+        .open-source-footer i {
+            font-size: 18px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
+    <div class="page-wrapper">
     <div class="auth-container">
+        <div class="site-branding">
+            <img src="favicon.svg" alt="PackageTrackr.app Logo">
+            <h2 class="site-name">PackageTrackr.app</h2>
+            <p class="tagline">Track all your packages in one place</p>
+        </div>
         <h1><i class="bi bi-box-seam"></i> Login</h1>
         <p class="subtitle">Sign in to your account</p>
 
@@ -163,6 +215,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Don't have an account? <a href="register.php">Register here</a>
             </div>
         </form>
+    </div>
+    <div class="open-source-footer">
+        <a href="https://github.com/DriftSolutions/PackageTrackr" target="_blank" rel="noopener">
+            <i class="bi bi-github"></i> We're open source on GitHub
+        </a>
+    </div>
     </div>
 </body>
 </html>
