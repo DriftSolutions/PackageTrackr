@@ -392,10 +392,28 @@ function incrementClaudeAnalysisAttempts($id, $error_message) {
 function updatePackageNameFromClaude($tracking_number_id, $package_name) {
     try {
         $pdo = getDbConnection();
-        $stmt = $pdo->prepare("UPDATE tracking_numbers
-                              SET package_name = ?
-                              WHERE id = ?");
-        return $stmt->execute([$package_name, $tracking_number_id]);
+
+        // Get the current package name to store as original (if not already set)
+        $stmt = $pdo->prepare("SELECT package_name, original_package_name FROM tracking_numbers WHERE id = ?");
+        $stmt->execute([$tracking_number_id]);
+        $current = $stmt->fetch();
+
+        // Only store original_package_name if it hasn't been set yet (NULL means Claude hasn't touched it)
+        // This preserves the very first name before Claude updated it
+        // Use empty string to indicate "no previous name" vs NULL meaning "Claude hasn't updated"
+        if ($current && $current['original_package_name'] === null) {
+            $original = $current['package_name'] ?? ''; // Use empty string if no previous name
+            $stmt = $pdo->prepare("UPDATE tracking_numbers
+                                  SET package_name = ?, original_package_name = ?
+                                  WHERE id = ?");
+            return $stmt->execute([$package_name, $original, $tracking_number_id]);
+        } else {
+            // original_package_name already set, just update package_name
+            $stmt = $pdo->prepare("UPDATE tracking_numbers
+                                  SET package_name = ?
+                                  WHERE id = ?");
+            return $stmt->execute([$package_name, $tracking_number_id]);
+        }
     } catch (PDOException $e) {
         error_log("Error updating package name from Claude: " . $e->getMessage());
         return false;

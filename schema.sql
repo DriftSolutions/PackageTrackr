@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     is_permanent_status TINYINT(1) DEFAULT 0,
     is_outgoing TINYINT(1) NOT NULL DEFAULT 0,
     raw_api_response LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`raw_api_response`)),
+    original_package_name VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_tracking_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY uk_user_tracking (user_id, tracking_number),
     INDEX idx_user_id (user_id),

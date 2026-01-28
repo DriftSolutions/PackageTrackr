@@ -290,7 +290,14 @@ function displayTrackingDetails(tracking, events) {
             </div>
             <div class="col-md-6">
                 <h6>Package Name</h6>
-                <p>${tracking.package_name ? escapeHtml(tracking.package_name) : '<em class="text-muted">Not specified</em>'}</p>
+                <p>
+                    ${tracking.package_name ? escapeHtml(tracking.package_name) : '<em class="text-muted">Not specified</em>'}
+                    ${tracking.original_package_name !== null && tracking.original_package_name !== undefined ?
+                        (tracking.original_package_name !== '' ?
+                            `<br><small class="text-muted"><i class="bi bi-robot"></i> Updated by Claude from: "${escapeHtml(tracking.original_package_name)}"</small>` :
+                            `<br><small class="text-muted"><i class="bi bi-robot"></i> Set by Claude</small>`) :
+                        ''}
+                </p>
             </div>
         </div>
 
