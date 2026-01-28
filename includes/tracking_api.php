@@ -95,6 +95,12 @@ function register17TrackNumber($user_id, $trackingNumber, $carrier) {
 
     $carrierCode = get17TrackCarrierCode($carrier);
 
+    // Skip registration if carrier has no 17track code
+    if ($carrierCode === 0) {
+        error_log("Skipping 17track registration for {$trackingNumber}: carrier '{$carrier}' has no 17track code");
+        return ['success' => true, 'skipped' => true, 'reason' => 'Carrier not supported by 17track'];
+    }
+
     $curl = curl_init();
 
     // Include user_id as tag so webhook knows which user this belongs to

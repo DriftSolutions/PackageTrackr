@@ -15,13 +15,13 @@ class AmazonCarrier extends Carrier {
     }
 
     public function get17TrackCode(): int {
-        return 100308;
+        return 0; // Amazon orders are not tracked via 17track
     }
 
     public function getTrackingPatterns(): array {
-        // Amazon: TBA followed by 12-16 digits
+        // Amazon Order ID format: 123-1234567-1234567 (3 digits, 7 digits, 7 digits)
         return [
-            'TBA[0-9]{12,16}'
+            '[0-9]{3}-[0-9]{7}-[0-9]{7}'
         ];
     }
 
@@ -30,19 +30,15 @@ class AmazonCarrier extends Carrier {
     }
 
     public function getTrackingUrl(string $trackingNumber): string {
-        // Amazon doesn't have a direct tracking URL that works without login
-        return '';
+        // Link to Amazon order details page (requires login)
+        return 'https://www.amazon.com/gp/your-account/order-details?orderID=' . urlencode($trackingNumber);
     }
 
     public function getDetectionPriority(): int {
         return 95; // Very high priority - specific pattern
     }
 
-    /**
-     * Amazon carrier is currently disabled for auto-detection
-     * Enable by adding to CarrierRegistry
-     */
     public function isEnabled(): bool {
-        return false;
+        return true;
     }
 }

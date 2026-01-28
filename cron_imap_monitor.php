@@ -128,13 +128,6 @@ foreach ($emails as $emailNum) {
     // Get the email body, properly handling MIME structure
     $body = getEmailBody($imap, $emailNum);
 
-	if (stristr($body, 'shipment-tracking@amazon.com') !== FALSE) {
-		print "Skipping Amazon email...\n";
-	        imap_setflag_full($imap, $emailNum, "\\Seen");
-	        imap_delete($imap, $emailNum);
-	        continue;
-	}
-
     // Extract tracking numbers from email body
     $trackingNumbers = extractTrackingNumbers($subject."\n".$body);
 
@@ -213,6 +206,15 @@ foreach ($emails as $emailNum) {
 
             $addedmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
 
+            // Handle Amazon email status updates
+            if ($carrier === 'Amazon') {
+                $amazonData = getAmazonStatusFromSubject($subject);
+                if ($amazonData) {
+                    updateTrackingNumber($userId, $trackingNumberId, $amazonData);
+                    logMessage("    Set Amazon status to: {$amazonData['status']}");
+                }
+            }
+
             // If user has Claude API key, queue email for AI analysis
             $claudeApiKey = getUserSetting($userId, 'claude_api_key', '');
             if (!empty($claudeApiKey)) {
@@ -224,7 +226,15 @@ foreach ($emails as $emailNum) {
             if (stristr($result['error'], 'already exists') !== FALSE) {
                 logMessage("    ℹ Already exists");
 	        $existsmsg .= "{$carrier}: {$trackingNumber} - {$trackingLink}\n\n";
-                // Don't add to message for already existing tracking numbers
+
+                // Handle Amazon email status updates for existing tracking numbers
+                if ($carrier === 'Amazon' && isset($result['id'])) {
+                    $amazonData = getAmazonStatusFromSubject($subject);
+                    if ($amazonData) {
+                        updateTrackingNumber($userId, $result['id'], $amazonData);
+                        logMessage("    Updated Amazon status to: {$amazonData['status']}");
+                    }
+                }
             } else {
                 logMessage("    ✗ " . $result['error']);
                 $addedmsg .= "{$carrier}: {$trackingNumber} - Error: " . $result['error'] . "\n";
@@ -326,4 +336,51 @@ function getEmailBody($imap, $emailNum) {
  */
 function extractTrackingNumbers($text) {
     return CarrierRegistry::getInstance()->extractTrackingNumbers($text);
+}
+
+/**
+ * Determine Amazon order status and related fields from email subject line
+ * Returns array with status, raw_status, and date fields as appropriate
+ */
+function getAmazonStatusFromSubject($subject) {
+    // Strip common email forwarding/reply prefixes (can appear multiple times)
+    // Handles: Fwd:, Fw:, FW:, Forward:, Forwarded:, Re:, etc.
+    $subject = preg_replace('/^(\s*(fwd|fw|forward|forwarded|re)\s*:\s*)+/i', '', $subject);
+
+    $today = date('Y-m-d');
+
+    if (stripos($subject, 'Ordered:') === 0) {
+        return [
+            'status' => 'Information Received',
+            'raw_status' => 'InfoReceived'
+        ];
+    }
+    if (stripos($subject, 'Shipped:') === 0) {
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit'
+        ];
+    }
+    if (stripos($subject, 'Delivery update:') === 0) {
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit'
+        ];
+    }
+    if (stripos($subject, 'Now arriving today:') === 0 || stripos($subject, 'Out for delivery:') === 0) {
+        return [
+            'status' => 'Out for Delivery',
+            'raw_status' => 'OutForDelivery',
+            'estimated_delivery_date' => $today
+        ];
+    }
+    if (stripos($subject, 'Delivered:') === 0) {
+        return [
+            'status' => 'Delivered',
+            'raw_status' => 'Delivered',
+            'delivered_date' => $today,
+            'is_permanent_status' => 1
+        ];
+    }
+    return null;
 }

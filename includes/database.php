@@ -34,7 +34,7 @@ function addTrackingNumber($user_id, $trackingNumber, $carrier = null, $packageN
             $stmt->execute([$existing['id'], $user_id]);
             return ['success' => true, 'message' => 'Tracking number restored from trash', 'id' => $existing['id']];
         }
-        return ['success' => false, 'error' => 'Tracking number already exists'];
+        return ['success' => false, 'error' => 'Tracking number already exists', 'id' => $existing['id']];
     }
 
     try {
