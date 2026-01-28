@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT DEFAULT NULL,
     tracking_number VARCHAR(255) NOT NULL,
-    carrier ENUM('UPS', 'USPS', 'FedEx', 'YunExpress', 'Amazon', 'China Post', 'SF Express') NOT NULL,
+    carrier VARCHAR(50) NOT NULL,
     package_name VARCHAR(255) DEFAULT NULL,
     status VARCHAR(100) DEFAULT 'Information Received',
     raw_status VARCHAR(100) DEFAULT 'InfoReceived',
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     is_permanent_status TINYINT(1) DEFAULT 0,
     is_outgoing TINYINT(1) NOT NULL DEFAULT 0,
     raw_api_response LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`raw_api_response`)),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tracking_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY uk_user_tracking (user_id, tracking_number),
     INDEX idx_user_id (user_id),
     INDEX idx_user_view_type (user_id, view_type),
@@ -99,6 +99,24 @@ CREATE TABLE IF NOT EXISTS settings (
     setting_value TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Pending Claude AI analysis queue
+CREATE TABLE IF NOT EXISTS pending_claude_analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tracking_number_id INT NOT NULL,
+    user_id INT NOT NULL,
+    email_subject VARCHAR(500) NOT NULL,
+    email_body LONGTEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    processed_at DATETIME DEFAULT NULL,
+    processing_attempts INT DEFAULT 0,
+    last_error TEXT DEFAULT NULL,
+    FOREIGN KEY (tracking_number_id) REFERENCES tracking_numbers(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_processed_at (processed_at),
+    INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default global settings
