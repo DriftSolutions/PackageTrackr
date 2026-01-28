@@ -2,8 +2,8 @@
 require_once __DIR__ . '/Carrier.php';
 
 /**
- * Amazon Logistics Carrier Implementation
- * Note: Currently disabled in detection but kept for API code reference
+ * Amazon Carrier Implementation
+ * Amazon doesn't have a tracking API or even include tracking numbers in their emails, so this just adds the Amazon Order ID and bases the status on the email subject line (Ordered, Shipped, Delivered, etc.)
  */
 class AmazonCarrier extends Carrier {
     public function getName(): string {
