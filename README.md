@@ -6,11 +6,11 @@ I have a public instance running at https://packagetrackr.app/ if you'd rather u
 
 ## Overview
 
-PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoing packages. It integrates with the 17track API to provide comprehensive tracking information for packages from multiple carriers including UPS, USPS, FedEx, and YunExpress.
+PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoing packages. It integrates with the 17track API to provide comprehensive tracking information for packages from multiple carriers including UPS, USPS, FedEx, YunExpress, China Post, SF Express, and Amazon.
 
 ## Features
 
-- **Multi-Carrier Support**: Track packages from UPS, USPS, FedEx, and YunExpress
+- **Multi-Carrier Support**: Track packages from UPS, USPS, FedEx, YunExpress, China Post, SF Express, and Amazon
 - **Real-Time Updates**: Webhook integration with 17track API for instant tracking updates (they don't seem to be super fast, at least not on the free tier)
 - **Email Integration**: Forward shipping emails to automatically extract and add tracking numbers
 - **User Authentication**: Secure user registration and login system
@@ -80,8 +80,11 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
    # Auto-archive delivered packages (daily at 2 AM)
    0 2 * * * /usr/bin/php /path/to/packagetrackr/cron_auto_trash.php
 
-   # Monitor tracking email inbox (every 5 minutes)
-   */5 * * * * /usr/bin/php /path/to/packagetrackr/cron_imap_monitor.php
+   # Monitor tracking email inbox (every 3 minutes)
+   */3 * * * * /usr/bin/php /path/to/packagetrackr/cron_imap_monitor.php
+
+   # Handle Claude email parsing (every 5 minutes)
+   */5 * * * * /usr/bin/php /path/to/packagetrackr/cron_claude_processor.php
    ```
 
 ## Configuration
@@ -137,19 +140,103 @@ To automatically add tracking numbers from shipping emails:
 
 ```
 packagetrackr/
-├── includes/           # Backend PHP files
-│   ├── config.php     # Configuration
-│   ├── auth.php       # Authentication
-│   ├── database.php   # Database functions
-│   ├── tracking_api.php # 17track API integration
-│   └── functions.inc.php # Utility functions
-├── *.php              # Frontend pages
-├── api.php            # API endpoint
-├── webhook.php        # 17track webhook handler
-├── app.js             # Frontend JavaScript
-├── cron_*.php         # Cron job scripts
-└── schema.sql         # Database schema
+├── includes/               # Backend PHP files
+│   ├── config.php          # Configuration
+│   ├── auth.php            # Authentication
+│   ├── database.php        # Database functions
+│   ├── tracking_api.php    # 17track API integration
+│   ├── functions.inc.php   # Utility functions
+│   └── carriers/           # Carrier implementations
+│       ├── Carrier.php         # Abstract base class
+│       ├── CarrierRegistry.php # Singleton registry for all carriers
+│       ├── UpsCarrier.php
+│       ├── UspsCarrier.php
+│       ├── FedexCarrier.php
+│       ├── YunExpressCarrier.php
+│       ├── ChinaPostCarrier.php
+│       ├── SfExpressCarrier.php
+│       └── AmazonCarrier.php
+├── *.php                   # Frontend pages
+├── api.php                 # API endpoint
+├── webhook.php             # 17track webhook handler
+├── app.js                  # Frontend JavaScript
+├── cron_*.php              # Cron job scripts
+└── schema.sql              # Database schema
 ```
+
+### Adding a New Carrier
+
+The carrier system uses a registry pattern. To add a new carrier:
+
+1. **Create a new carrier class** in `includes/carriers/`:
+
+   ```php
+   <?php
+   // includes/carriers/NewCarrier.php
+
+   require_once __DIR__ . '/Carrier.php';
+
+   class NewCarrier extends Carrier {
+       public function getName(): string {
+           return 'New Carrier';
+       }
+
+       public function getId(): string {
+           return 'NewCarrier';
+       }
+
+       public function get17TrackCode(): string {
+           // Find the carrier code in the JSON or CSV files at https://api.17track.net/en/doc?version=v2.4&anchor=carrier-code
+           return '12345';
+       }
+
+       public function getTrackingPatterns(): array {
+           // Regex patterns to match this carrier's tracking numbers
+           return [
+               '/^NC[0-9]{12}$/i',  // Example: NC123456789012
+           ];
+       }
+
+       public function getLogoPath(): string {
+           return '/images/carriers/newcarrier.png';
+       }
+
+       public function getTrackingUrl(string $trackingNumber): string {
+           return 'https://newcarrier.com/track?num=' . urlencode($trackingNumber);
+       }
+
+       public function getDetectionPriority(): int {
+           // Higher priority = checked first during auto-detection
+           // Use higher values for more specific patterns
+           return 50;
+       }
+   }
+   ```
+
+2. **Register the carrier** in `includes/carriers/CarrierRegistry.php`:
+
+   ```php
+   // Add at top of file with other requires
+   require_once __DIR__ . '/NewCarrier.php';
+
+   // Add in registerDefaultCarriers() method
+   $this->register(new NewCarrier());
+   ```
+
+3. **Add a carrier logo** (optional) to `/images/carriers/`
+
+### Carrier Detection Priority
+
+When a tracking number is entered, carriers are checked in priority order (highest first). Set the detection priority based on pattern specificity:
+
+| Priority Range | Use Case |
+|----------------|----------|
+| 90-100 | Very unique patterns (specific prefixes + fixed length) |
+| 70-89 | Specific patterns (known prefixes or suffixes) |
+| 50-69 | Moderately specific patterns |
+| 20-49 | Generic patterns (just digit counts) |
+
+This prevents generic patterns (like "any 12 digits") from matching before more specific ones.
 
 ## Security
 
