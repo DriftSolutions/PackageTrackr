@@ -320,6 +320,32 @@ function getStatusClass($status) {
             animation: highlightPulse 2s ease-in-out 3;
             scroll-margin-top: 100px;
         }
+
+        /* Save indicator for package name input */
+        .save-indicator {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .save-indicator.save-success {
+            color: var(--bs-success);
+        }
+
+        .save-indicator.save-error {
+            color: var(--bs-danger);
+        }
+
+        .save-indicator.fade-out {
+            opacity: 0;
+        }
     </style>
 </head>
 <body>

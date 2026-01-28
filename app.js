@@ -99,6 +99,8 @@ function addTracking() {
 
 // Update package name
 function updatePackageName(trackingId, packageName) {
+    const input = document.querySelector(`.package-name-input[data-tracking-id="${trackingId}"]`);
+
     const formData = new FormData();
     formData.append('action', 'update_name');
     formData.append('id', trackingId);
@@ -110,13 +112,41 @@ function updatePackageName(trackingId, packageName) {
     })
     .then(response => response.json())
     .then(data => {
-        if (!data.success) {
+        if (data.success) {
+            showSaveIndicator(input, true);
+        } else {
             console.error('Failed to update package name');
+            showSaveIndicator(input, false);
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        showSaveIndicator(input, false);
     });
+}
+
+// Show save indicator next to input
+function showSaveIndicator(input, success) {
+    // Remove any existing indicator
+    const existingIndicator = input.parentElement.querySelector('.save-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+
+    const indicator = document.createElement('span');
+    indicator.className = `save-indicator ${success ? 'save-success' : 'save-error'}`;
+    indicator.innerHTML = success
+        ? '<i class="bi bi-check-circle-fill"></i> Saved'
+        : '<i class="bi bi-x-circle-fill"></i> Error';
+
+    input.parentElement.style.position = 'relative';
+    input.parentElement.appendChild(indicator);
+
+    // Fade out and remove after delay
+    setTimeout(() => {
+        indicator.classList.add('fade-out');
+        setTimeout(() => indicator.remove(), 300);
+    }, 1500);
 }
 
 // Move tracking number to different view
