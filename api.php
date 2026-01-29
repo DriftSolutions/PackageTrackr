@@ -148,6 +148,9 @@ function handleDetails() {
     // Get status color based on raw_status (with formatted status as fallback)
     $tracking['status_color'] = getStatusColor($tracking['raw_status'] ?? null, $tracking['status'] ?? null);
 
+    // Check if this carrier supports 17track API
+    $tracking['supports_17track'] = get17TrackCarrierCode($tracking['carrier']) !== 0;
+
     $events = getTrackingEvents($id);
 
     echo json_encode([

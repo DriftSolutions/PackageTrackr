@@ -363,9 +363,10 @@ function displayTrackingDetails(tracking, events) {
         ${eventsHtml}
 
         <div class="mt-4">
-            <button class="btn btn-primary btn-sm" onclick="refreshTracking(${tracking.id})">
+            <button class="btn btn-primary btn-sm" onclick="refreshTracking(${tracking.id})"${tracking.supports_17track ? '' : ' disabled'}>
                 <i class="bi bi-arrow-clockwise"></i> Refresh Tracking
             </button>
+            ${tracking.supports_17track ? '' : '<small class="text-muted ms-2">Not supported by 17track API</small>'}
         </div>
     `;
 }
