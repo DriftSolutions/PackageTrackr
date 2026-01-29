@@ -367,6 +367,18 @@ function getAmazonStatusFromSubject($subject) {
             'raw_status' => 'InTransit'
         ];
     }
+    if (stripos($subject, 'Delay in shipping your Amazon') === 0) {
+        return [
+            'status' => 'Exception',
+            'raw_status' => 'Exception_Delayed'
+        ];
+    }
+    if (stripos($subject, 'Delivery attempted:') === 0) {
+        return [
+            'status' => 'Exception',
+            'raw_status' => 'Exception_Delayed'
+        ];
+    }
     if (stripos($subject, 'Now arriving today:') === 0 || stripos($subject, 'Out for delivery:') === 0) {
         return [
             'status' => 'Out for Delivery',
