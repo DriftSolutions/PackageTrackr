@@ -16,6 +16,8 @@ require_once __DIR__ . '/YunExpressCarrier.php';
 require_once __DIR__ . '/ChinaPostCarrier.php';
 require_once __DIR__ . '/SfExpressCarrier.php';
 require_once __DIR__ . '/AmazonCarrier.php';
+require_once __DIR__ . '/YanwenCarrier.php';
+require_once __DIR__ . '/UniUniCarrier.php';
 
 class CarrierRegistry {
     private static ?CarrierRegistry $instance = null;
@@ -53,6 +55,8 @@ class CarrierRegistry {
         $this->register(new ChinaPostCarrier());
         $this->register(new SfExpressCarrier());
         $this->register(new AmazonCarrier());
+        $this->register(new YanwenCarrier());
+        $this->register(new UniUniCarrier());
     }
 
     /**
