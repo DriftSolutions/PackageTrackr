@@ -179,7 +179,8 @@ function parseTrackInfo($tracking) {
         'estimated_delivery_date' => null,
         'delivered_date' => null,
         'events' => [],
-        'is_permanent_status' => false
+        'is_permanent_status' => false,
+        'local_number' => null
     ];
 
     // Extract status from track_info
@@ -189,6 +190,11 @@ function parseTrackInfo($tracking) {
     }
 
     $trackInfo = $tracking['track_info'];
+
+    // Extract local tracking number from misc_info if present
+    if (isset($trackInfo['misc_info']['local_number']) && !empty($trackInfo['misc_info']['local_number'])) {
+        $result['local_number'] = $trackInfo['misc_info']['local_number'];
+    }
 
     // Get latest status
     if (isset($trackInfo['latest_status'])) {
@@ -414,6 +420,24 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
     }
 
     updateTrackingNumber($user_id, $trackingNumberId, $updateData);
+
+    // Check for local tracking number and add it if it doesn't exist
+    if (!empty($parsedData['local_number'])) {
+        $localNumber = $parsedData['local_number'];
+        error_log("Found local tracking number: {$localNumber}");
+
+        // Add the local number with the same package name as the original (also registers with 17track)
+        $result = addTrackingNumber($user_id, $localNumber, null, $tracking['package_name']);
+
+        if ($result['success']) {
+            error_log("Added local number to system with ID #{$result['id']}");
+        } else if (isset($result['id'])) {
+            // Already exists but has an ID
+            error_log("Local number already exists in system (ID #{$result['id']})");
+        } else {
+            error_log("Failed to add local number: " . ($result['error'] ?? 'Unknown error'));
+        }
+    }
 
     return ['success' => true, 'data' => $parsedData];
 }

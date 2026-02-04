@@ -272,6 +272,25 @@ function processTrackingUpdate($trackingData, $user_id) {
         }
 
         logWebhook("    SUCCESS: Updated tracking #{$trackingId}");
+
+        // Check for local tracking number (extracted by parseTrackInfo) and add it if it doesn't exist
+        if (!empty($parsedData['local_number'])) {
+            $localNumber = $parsedData['local_number'];
+            logWebhook("    Found local tracking number: {$localNumber}");
+
+            // Add the local number with the same package name as the original plus last mile indicator (also registers with 17track)
+            $result = addTrackingNumber($user_id, $localNumber, null, $tracking['package_name'] . ' (Last Mile Carrier)');
+
+            if ($result['success']) {
+                logWebhook("    Added local number to system with ID #{$result['id']}");
+            } else if (isset($result['id'])) {
+                // Already exists but has an ID
+                logWebhook("    Local number already exists in system (ID #{$result['id']})");
+            } else {
+                logWebhook("    Failed to add local number: " . ($result['error'] ?? 'Unknown error'));
+            }
+        }
+
         return ['success' => true];
 
     } catch (PDOException $e) {
