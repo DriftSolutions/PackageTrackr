@@ -6,13 +6,14 @@ I have a public instance running at https://packagetrackr.app/ if you'd rather u
 
 ## Overview
 
-PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoing packages. It integrates with the 17track API to provide comprehensive tracking information for packages from multiple carriers including UPS, USPS, FedEx, YunExpress, China Post, SF Express, and Amazon.
+PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoing packages. It integrates with the 17track API to provide comprehensive tracking information for packages from multiple carriers.
 
 ## Features
 
-- **Multi-Carrier Support**: Track packages from UPS, USPS, FedEx, YunExpress, China Post, SF Express, and Amazon
+- **Multi-Carrier Support**: Track packages from UPS, USPS, FedEx, YunExpress, China Post, SF Express, and more
 - **Real-Time Updates**: Webhook integration with 17track API for instant tracking updates (they don't seem to be super fast, at least not on the free tier)
 - **Email Integration**: Forward shipping emails to automatically extract and add tracking numbers
+- **Amazon Tracking**: If you use the email integration feature, it will virtually track your Amazon orders from those emails. Amazon doesn't provide a tracking API, so that's the best we can do
 - **User Authentication**: Secure user registration and login system
 - **Package Organization**:
   - Multiple views (Current, Archive, Trash)
@@ -152,15 +153,13 @@ packagetrackr/
 │       ├── UpsCarrier.php
 │       ├── UspsCarrier.php
 │       ├── FedexCarrier.php
-│       ├── YunExpressCarrier.php
-│       ├── ChinaPostCarrier.php
-│       ├── SfExpressCarrier.php
+│       ├── ...
 │       └── AmazonCarrier.php
-├── *.php                   # Frontend pages
 ├── api.php                 # API endpoint
 ├── webhook.php             # 17track webhook handler
 ├── app.js                  # Frontend JavaScript
 ├── cron_*.php              # Cron job scripts
+├── *.php                   # Frontend pages
 └── schema.sql              # Database schema
 ```
 
