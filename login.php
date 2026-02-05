@@ -217,8 +217,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
     <div class="open-source-footer">
+        <a href="carriers.php"><i class="bi bi-truck"></i> Supported Carriers</a>
+        &nbsp;&bull;&nbsp;
         <a href="https://github.com/DriftSolutions/PackageTrackr" target="_blank" rel="noopener">
-            <i class="bi bi-github"></i> We're open source on GitHub
+            <i class="bi bi-github"></i> Open Source
         </a>
     </div>
     </div>

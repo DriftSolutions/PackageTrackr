@@ -356,6 +356,9 @@ function getStatusClass($status) {
                 <?= SITE_NAME ?>
             </a>
             <div class="ms-auto d-flex gap-2 align-items-center">
+                <a href="carriers.php" class="btn btn-light btn-sm">
+                    <i class="bi bi-truck"></i> Supported Carriers
+                </a>
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars(substr($user['email'], 0, 30)); ?>
