@@ -260,6 +260,7 @@ This project is open source and available under the [MIT License](LICENSE).
 - Themes by [Bootswatch](https://bootswatch.com/)
 - Icons by [Bootstrap Icons](https://icons.getbootstrap.com/)
 - Package tracking powered by [17track API](https://www.17track.net/)
+- Tracking number detection data from [jkeen's tracking_number_data repo](https://github.com/jkeen/tracking_number_data/)
 
 ## Acknowledgments
 
