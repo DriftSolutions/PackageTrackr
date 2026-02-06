@@ -1,10 +1,13 @@
 <?php
 require_once __DIR__ . '/Carrier.php';
+require_once __DIR__ . '/../tracking_number_data/TrackingNumberDetector.php';
 
 /**
  * USPS Carrier Implementation
  */
 class UspsCarrier extends Carrier {
+    private static ?TrackingNumberDetector $detector = null;
+
     public function getName(): string {
         return 'USPS';
     }
@@ -39,7 +42,24 @@ class UspsCarrier extends Carrier {
         return 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' . urlencode($trackingNumber);
     }
 
+    public function matchesTrackingNumber(string $trackingNumber): bool {
+        if (self::$detector === null) {
+            self::$detector = new TrackingNumberDetector();
+        }
+
+        $trackingNumber = preg_replace('/\s+/', '', strtoupper($trackingNumber));
+        $results = self::$detector->detect($trackingNumber);
+
+        foreach ($results as $result) {
+            if ($result['courier_code'] === 'usps' || $result['courier_code'] === 's10') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function getDetectionPriority(): int {
-        return 60; // Medium-high priority
+        return 99; // High priority - detector-based with checksum validation
     }
 }
