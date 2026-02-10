@@ -26,7 +26,7 @@ class UniUniCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/uniuni.png';
+        return 'images/carriers/uniuni.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

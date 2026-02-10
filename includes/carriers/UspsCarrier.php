@@ -35,7 +35,7 @@ class UspsCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/usps.png';
+        return 'images/carriers/usps.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

@@ -26,7 +26,7 @@ class YanwenCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/yanwen.png';
+        return 'images/carriers/yanwen.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

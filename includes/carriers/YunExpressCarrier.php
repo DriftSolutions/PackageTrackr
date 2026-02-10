@@ -25,7 +25,7 @@ class YunExpressCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/yunexpress.png';
+        return 'images/carriers/yunexpress.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

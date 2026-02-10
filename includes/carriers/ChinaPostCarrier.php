@@ -28,7 +28,7 @@ class ChinaPostCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/chinapost.png';
+        return 'images/carriers/chinapost.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

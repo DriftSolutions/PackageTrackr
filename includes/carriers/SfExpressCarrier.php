@@ -28,7 +28,7 @@ class SfExpressCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/sfexpress.png';
+        return 'images/carriers/sfexpress.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

@@ -35,7 +35,7 @@ class FedexCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/fedex.png';
+        return 'images/carriers/fedex.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {

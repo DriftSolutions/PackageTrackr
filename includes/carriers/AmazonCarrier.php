@@ -26,7 +26,7 @@ class AmazonCarrier extends Carrier {
     }
 
     public function getLogoPath(): string {
-        return 'images/amazon.png';
+        return 'images/carriers/amazon.png';
     }
 
     public function getTrackingUrl(string $trackingNumber): string {
