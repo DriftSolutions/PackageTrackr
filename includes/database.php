@@ -255,6 +255,23 @@ function getDbConnection() {
     return $pdo;
 }
 
+// Search tracking numbers across all views
+function searchTrackingNumbers($user_id, $query) {
+    $pdo = getDbConnection();
+    $query = trim($query);
+    if ($query === '') {
+        return [];
+    }
+    $like = '%' . $query . '%';
+    $stmt = $pdo->prepare("SELECT id, tracking_number, carrier, package_name, status, view_type
+                           FROM tracking_numbers
+                           WHERE user_id = ? AND (tracking_number LIKE ? OR package_name LIKE ?)
+                           ORDER BY created_at DESC
+                           LIMIT 20");
+    $stmt->execute([$user_id, $like, $like]);
+    return $stmt->fetchAll();
+}
+
 // Carrier detection from tracking number
 function detectCarrier($trackingNumber) {
     $trackingNumber = preg_replace('/\s+/', '', strtoupper($trackingNumber));

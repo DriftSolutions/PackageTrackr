@@ -346,6 +346,107 @@ function getStatusClass($status) {
         .save-indicator.fade-out {
             opacity: 0;
         }
+
+        .search-box {
+            min-width: 350px;
+        }
+
+        .search-box .input-group-text {
+            background: white;
+            border-right: 0;
+        }
+
+        .search-box .form-control {
+            border-left: 0;
+        }
+
+        .search-box .form-control:focus {
+            box-shadow: none;
+            border-color: var(--bs-primary);
+        }
+
+        .search-box .form-control:focus + .input-group-text,
+        .search-box .input-group:focus-within .input-group-text {
+            border-color: var(--bs-primary);
+        }
+
+        .search-results {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: 0;
+            z-index: 1050;
+            background: white;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 10px;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-result-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-result-tracking {
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+            color: var(--bs-secondary);
+        }
+
+        .search-result-view {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        .search-no-results {
+            padding: 12px;
+            text-align: center;
+            color: var(--bs-secondary);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 576px) {
+            .search-box {
+                min-width: 140px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -413,32 +514,41 @@ function getStatusClass($status) {
     <?php endif; ?>
 
     <div class="container mt-4">
-        <ul class="nav nav-tabs view-tabs mb-4">
-            <li class="nav-item">
-                <a class="nav-link <?= $currentView === 'current' ? 'active' : '' ?>" href="?view=current">
-                    <i class="bi bi-inbox"></i> Current
-                    <?php if ($viewCounts['current'] > 0): ?>
-                        <span class="badge rounded-pill bg-primary badge-count"><?= $viewCounts['current'] ?></span>
-                    <?php endif; ?>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= $currentView === 'archive' ? 'active' : '' ?>" href="?view=archive">
-                    <i class="bi bi-archive"></i> Archive
-                    <?php /* if ($viewCounts['archive'] > 0): ?>
-                        <span class="badge bg-secondary badge-count"><?= $viewCounts['archive'] ?></span>
-                    <?php endif; */ ?>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= $currentView === 'trash' ? 'active' : '' ?>" href="?view=trash">
-                    <i class="bi bi-trash"></i> Trash
-                    <?php /* if ($viewCounts['trash'] > 0): ?>
-                        <span class="badge bg-danger badge-count"><?= $viewCounts['trash'] ?></span>
-                    <?php endif; */ ?>
-                </a>
-            </li>
-        </ul>
+        <div class="d-flex align-items-center mb-4">
+            <ul class="nav nav-tabs view-tabs mb-0 flex-grow-1">
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentView === 'current' ? 'active' : '' ?>" href="?view=current">
+                        <i class="bi bi-inbox"></i> Current
+                        <?php if ($viewCounts['current'] > 0): ?>
+                            <span class="badge rounded-pill bg-primary badge-count"><?= $viewCounts['current'] ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentView === 'archive' ? 'active' : '' ?>" href="?view=archive">
+                        <i class="bi bi-archive"></i> Archive
+                        <?php /* if ($viewCounts['archive'] > 0): ?>
+                            <span class="badge bg-secondary badge-count"><?= $viewCounts['archive'] ?></span>
+                        <?php endif; */ ?>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentView === 'trash' ? 'active' : '' ?>" href="?view=trash">
+                        <i class="bi bi-trash"></i> Trash
+                        <?php /* if ($viewCounts['trash'] > 0): ?>
+                            <span class="badge bg-danger badge-count"><?= $viewCounts['trash'] ?></span>
+                        <?php endif; */ ?>
+                    </a>
+                </li>
+            </ul>
+            <div class="search-box position-relative ms-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search packages..." autocomplete="off">
+                </div>
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </div>
 
         <?php if ($currentView === 'trash'): ?>
             <div class="alert alert-info" role="alert">
@@ -704,6 +814,87 @@ if (!empty($tracking['sub_status'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
     <script>
+        // Search functionality
+        (function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            let debounceTimer = null;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    searchResults.classList.remove('show');
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                debounceTimer = setTimeout(() => performSearch(query), 250);
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    searchResults.classList.remove('show');
+                    searchInput.blur();
+                }
+            });
+
+            // Close results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-box')) {
+                    searchResults.classList.remove('show');
+                }
+            });
+
+            async function performSearch(query) {
+                try {
+                    const resp = await fetch('api.php?action=search&q=' + encodeURIComponent(query));
+                    const data = await resp.json();
+                    if (!data.success) return;
+                    renderResults(data.results, query);
+                } catch (e) {
+                    console.error('Search failed:', e);
+                }
+            }
+
+            function renderResults(results, query) {
+                if (results.length === 0) {
+                    searchResults.innerHTML = '<div class="search-no-results">No matching packages found</div>';
+                    searchResults.classList.add('show');
+                    return;
+                }
+
+                const viewColors = { current: 'bg-primary', archive: 'bg-secondary', trash: 'bg-danger' };
+                const html = results.map(r => {
+                    const name = r.package_name
+                        ? escapeHtml(r.package_name)
+                        : '<span class="text-muted">No name</span>';
+                    const viewBadge = `<span class="search-result-view badge ${viewColors[r.view_type] || 'bg-secondary'}">${escapeHtml(r.view_type)}</span>`;
+                    const url = '?view=' + encodeURIComponent(r.view_type) + '&highlight=' + encodeURIComponent(r.tracking_number);
+                    return `<a href="${url}" class="search-result-item">
+                        <div class="search-result-info">
+                            <div class="search-result-name">${name}</div>
+                            <div class="search-result-tracking">${highlightMatch(escapeHtml(r.tracking_number), query)}</div>
+                        </div>
+                        ${viewBadge}
+                    </a>`;
+                }).join('');
+
+                searchResults.innerHTML = html;
+                searchResults.classList.add('show');
+            }
+
+            function highlightMatch(text, query) {
+                const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<strong>$1</strong>');
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+        })();
+
         // Handle highlight parameter to scroll to and highlight a specific tracking number
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);

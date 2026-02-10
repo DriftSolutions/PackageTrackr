@@ -472,12 +472,12 @@ function isPermanentStatus($status) {
 // Handles the 9 main statuses from latest_status.status
 // Reference: https://asset.17track.net/api/document/v2_en/index.html
 function format17TrackStatus($statusText) {
-    if (!$statusText) {
+    if (empty($statusText)) {
         return 'Unknown';
     }
-if (strpos($statusText, ' ') !== FALSE) {
-	return $statusText;
-}
+    if (strpos($statusText, ' ') !== FALSE) {
+        return $statusText;
+    }
 
 $n = strpos($statusText, '_');
 if ($n !== FALSE) {

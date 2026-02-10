@@ -46,6 +46,10 @@ switch ($action) {
         handleToggleOutgoing();
         break;
 
+    case 'search':
+        handleSearch();
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Invalid action']);
         break;
@@ -179,6 +183,16 @@ function handleRefresh() {
     }
 
     echo json_encode($result);
+}
+
+// Handle searching tracking numbers
+function handleSearch() {
+    global $user_id;
+
+    $query = $_GET['q'] ?? '';
+    $results = searchTrackingNumbers($user_id, $query);
+
+    echo json_encode(['success' => true, 'results' => $results]);
 }
 
 // Handle toggling outgoing shipment status
