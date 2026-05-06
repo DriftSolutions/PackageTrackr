@@ -426,6 +426,9 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
         $localNumber = $parsedData['local_number'];
         error_log("Found local tracking number: {$localNumber}");
 
+        // Detect carrier for the local number
+        $detectedCarrier = detectCarrier($localNumber);
+
         // Add the local number with the same package name as the original plus last mile indicator (also registers with 17track)
         $result = addTrackingNumber($user_id, $localNumber, null, $tracking['package_name'] . ' (Last Mile Carrier)');
 
@@ -437,6 +440,10 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
         } else {
             error_log("Failed to add local number: " . ($result['error'] ?? 'Unknown error'));
         }
+
+        // Link last mile to parent in dedicated table
+        $cleanLocalNumber = preg_replace('/\s+/', '', strtoupper($localNumber));
+        addLastMileTracking($trackingNumberId, $cleanLocalNumber, $detectedCarrier);
     }
 
     return ['success' => true, 'data' => $parsedData];

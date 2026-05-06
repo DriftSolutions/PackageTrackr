@@ -33,6 +33,9 @@ foreach ($trackingNumbers as $tracking) {
     }
 }
 
+// Batch-fetch all last mile tracking numbers for this user (avoids N+1 queries)
+$lastMileByParent = getLastMileTrackingForUser($user_id);
+
 // Filter tracking numbers by status if a status filter is applied
 if ($statusFilter !== 'all' && !empty($uniqueStatuses)) {
     $trackingNumbers = array_filter($trackingNumbers, function($tracking) use ($statusFilter) {
@@ -667,6 +670,19 @@ function getStatusClass($status) {
 							echo htmlspecialchars($tracking['tracking_number']);
 						}
 						?>
+                                                <?php if (!empty($lastMileByParent[$tracking['id']])): ?>
+                                                    <?php foreach ($lastMileByParent[$tracking['id']] as $lm): ?>
+                                                        <span class="text-muted">|</span>
+                                                        <span class="badge bg-info text-dark" style="font-size: 0.7rem;">LM</span>
+                                                        <?php if ($lm['carrier']): ?>
+                                                            <span class="badge bg-secondary"><?= htmlspecialchars($lm['carrier']) ?></span>
+                                                        <?php endif; ?>
+                                                        <a href="?view=<?= htmlspecialchars($lm['lm_view_type'] ?? $currentView) ?>&highlight=<?= urlencode($lm['tracking_number']) ?>"
+                                                           class="tracking-number-link">
+                                                            <?= htmlspecialchars($lm['tracking_number']) ?>
+                                                        </a>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                         <div class="col-md-6">

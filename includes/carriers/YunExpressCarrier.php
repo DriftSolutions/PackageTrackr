@@ -29,7 +29,8 @@ class YunExpressCarrier extends Carrier {
     }
 
     public function getTrackingUrl(string $trackingNumber): string {
-        return 'https://www.yunexpress.com/track/?number=' . urlencode($trackingNumber);
+        return 'https://www.17track.net/?nums=' . urlencode($trackingNumber);
+//        return 'https://www.yunexpress.com/track/?number=' . urlencode($trackingNumber);
     }
 
     public function getDetectionPriority(): int {

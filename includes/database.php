@@ -344,6 +344,65 @@ function setUserSetting($user_id, $key, $value) {
 }
 
 // ============================================================================
+// Last Mile Tracking Functions
+// ============================================================================
+
+// Add a last mile tracking number linked to a parent
+function addLastMileTracking($parentTrackingId, $trackingNumber, $carrier) {
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("INSERT IGNORE INTO last_mile_tracking (parent_tracking_id, tracking_number, carrier)
+                              VALUES (?, ?, ?)");
+        return $stmt->execute([$parentTrackingId, $trackingNumber, $carrier]);
+    } catch (PDOException $e) {
+        error_log("Error adding last mile tracking: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Get all last mile tracking numbers for a parent
+function getLastMileTrackingNumbers($parentTrackingId) {
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("SELECT * FROM last_mile_tracking WHERE parent_tracking_id = ? ORDER BY created_at ASC");
+    $stmt->execute([$parentTrackingId]);
+    return $stmt->fetchAll();
+}
+
+// Get all last mile tracking numbers for a user's tracking numbers (batch query to avoid N+1)
+function getLastMileTrackingForUser($userId) {
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("SELECT lm.*, lm_tn.view_type AS lm_view_type
+                          FROM last_mile_tracking lm
+                          INNER JOIN tracking_numbers tn ON lm.parent_tracking_id = tn.id
+                          LEFT JOIN tracking_numbers lm_tn ON lm_tn.user_id = tn.user_id AND lm_tn.tracking_number = lm.tracking_number
+                          WHERE tn.user_id = ?
+                          ORDER BY lm.created_at ASC");
+    $stmt->execute([$userId]);
+    $rows = $stmt->fetchAll();
+
+    // Index by parent_tracking_id
+    $indexed = [];
+    foreach ($rows as $row) {
+        $indexed[$row['parent_tracking_id']][] = $row;
+    }
+    return $indexed;
+}
+
+// Remove a last mile tracking link
+function removeLastMileTracking($parentTrackingId, $lastMileId) {
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM last_mile_tracking WHERE id = ? AND parent_tracking_id = ?");
+        return $stmt->execute([$lastMileId, $parentTrackingId]);
+    } catch (PDOException $e) {
+        error_log("Error removing last mile tracking: " . $e->getMessage());
+        return false;
+    }
+}
+
+// ============================================================================
 // Claude AI Integration Functions
 // ============================================================================
 

@@ -197,6 +197,12 @@ class CarrierRegistry {
                     continue;
                 }
 
+                // Validate via matchesTrackingNumber() which includes checksum
+                // verification for carriers that support it (e.g. FedEx, UPS, USPS)
+                if (!$carrier->matchesTrackingNumber($number)) {
+                    continue;
+                }
+
                 $foundNumbers[$number] = true;
                 $results[] = [
                     'carrier' => $carrier->getId(),

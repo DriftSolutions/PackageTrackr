@@ -78,6 +78,18 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     INDEX idx_last_api_check (last_api_check)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Last mile tracking numbers linked to parent tracking numbers
+CREATE TABLE IF NOT EXISTS last_mile_tracking (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_tracking_id INT NOT NULL,
+    tracking_number VARCHAR(255) NOT NULL,
+    carrier VARCHAR(50) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_tracking_id) REFERENCES tracking_numbers(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_parent_tracking (parent_tracking_id, tracking_number),
+    INDEX idx_parent_tracking_id (parent_tracking_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tracking events/history table
 CREATE TABLE IF NOT EXISTS tracking_events (
     id INT AUTO_INCREMENT PRIMARY KEY,

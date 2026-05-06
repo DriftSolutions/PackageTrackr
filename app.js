@@ -236,7 +236,7 @@ function viewDetails(trackingId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                displayTrackingDetails(data.tracking, data.events);
+                displayTrackingDetails(data.tracking, data.events, data.last_mile || []);
             } else {
                 detailsContent.innerHTML = `
                     <div class="alert alert-danger">
@@ -256,7 +256,7 @@ function viewDetails(trackingId) {
 }
 
 // Display tracking details in modal
-function displayTrackingDetails(tracking, events) {
+function displayTrackingDetails(tracking, events, lastMile) {
     const detailsContent = document.getElementById('detailsContent');
 
     // Use status color from API response (determined by getStatusColor() in PHP)
@@ -295,6 +295,21 @@ function displayTrackingDetails(tracking, events) {
                 No tracking events available yet.
             </div>
         `;
+    }
+
+    // Build last mile section
+    let lastMileHtml = '';
+    if (lastMile && lastMile.length > 0) {
+        const items = lastMile.map(lm =>
+            `<div class="d-flex align-items-center gap-2 mb-1" data-last-mile-id="${lm.id}">
+                ${lm.carrier ? `<span class="badge bg-secondary">${escapeHtml(lm.carrier)}</span>` : ''}
+                <span class="font-monospace">${escapeHtml(lm.tracking_number)}</span>
+                <button class="btn btn-outline-danger btn-sm py-0 px-1" onclick="removeLastMile(${tracking.id}, ${lm.id})" title="Remove link">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>`
+        ).join('');
+        lastMileHtml = items;
     }
 
     detailsContent.innerHTML = `
@@ -360,6 +375,17 @@ function displayTrackingDetails(tracking, events) {
             </div>
         </div>
 
+        <div class="mb-3">
+            <h6>Last Mile Tracking</h6>
+            <div id="lastMileList">${lastMileHtml || '<span class="text-muted" id="noLastMile">None linked</span>'}</div>
+            <div class="mt-2 position-relative" style="max-width: 350px;">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="lastMileSearch" placeholder="Search tracking number to link..." autocomplete="off" data-parent-id="${tracking.id}">
+                </div>
+                <div class="list-group position-absolute w-100 shadow" id="lastMileResults" style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
         ${eventsHtml}
 
         <div class="mt-4">
@@ -369,6 +395,9 @@ function displayTrackingDetails(tracking, events) {
             ${tracking.supports_17track ? '' : '<small class="text-muted ms-2">Not supported by 17track API</small>'}
         </div>
     `;
+
+    // Wire up last mile search
+    initLastMileSearch(tracking.id);
 }
 
 // Refresh tracking information
@@ -396,6 +425,120 @@ function refreshTracking(trackingId) {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         });
+}
+
+// Last mile search within details modal
+function initLastMileSearch(parentId) {
+    const input = document.getElementById('lastMileSearch');
+    const resultsDiv = document.getElementById('lastMileResults');
+    let debounce = null;
+
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        const query = this.value.trim();
+        if (query.length < 2) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+            return;
+        }
+        debounce = setTimeout(() => {
+            fetch('api.php?action=search&q=' + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.results.length) {
+                        resultsDiv.innerHTML = '<div class="list-group-item text-muted small">No matches</div>';
+                        resultsDiv.style.display = 'block';
+                        return;
+                    }
+                    resultsDiv.innerHTML = data.results.map(r => {
+                        const name = r.package_name ? escapeHtml(r.package_name) : '';
+                        const label = name ? `${name} — ` : '';
+                        return `<button type="button" class="list-group-item list-group-item-action small py-1" onclick="addLastMile(${parentId}, '${escapeHtml(r.tracking_number)}')">
+                            ${label}<span class="font-monospace">${escapeHtml(r.tracking_number)}</span>
+                            <span class="badge bg-secondary ms-1">${escapeHtml(r.carrier)}</span>
+                        </button>`;
+                    }).join('');
+                    resultsDiv.style.display = 'block';
+                })
+                .catch(() => {
+                    resultsDiv.style.display = 'none';
+                });
+        }, 250);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    // Close results when clicking outside
+    document.getElementById('detailsContent').addEventListener('click', function(e) {
+        if (!e.target.closest('#lastMileSearch') && !e.target.closest('#lastMileResults')) {
+            resultsDiv.style.display = 'none';
+        }
+    });
+}
+
+// Add an existing tracking number as last mile
+function addLastMile(parentId, trackingNumber) {
+    const formData = new FormData();
+    formData.append('action', 'add_last_mile');
+    formData.append('parent_id', parentId);
+    formData.append('tracking_number', trackingNumber);
+
+    fetch('api.php', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Re-render the last mile list
+                const list = document.getElementById('lastMileList');
+                const noLm = document.getElementById('noLastMile');
+                if (noLm) noLm.remove();
+
+                list.innerHTML = data.last_mile.map(lm =>
+                    `<div class="d-flex align-items-center gap-2 mb-1" data-last-mile-id="${lm.id}">
+                        ${lm.carrier ? `<span class="badge bg-secondary">${escapeHtml(lm.carrier)}</span>` : ''}
+                        <span class="font-monospace">${escapeHtml(lm.tracking_number)}</span>
+                        <button class="btn btn-outline-danger btn-sm py-0 px-1" onclick="removeLastMile(${parentId}, ${lm.id})" title="Remove link">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>`
+                ).join('');
+
+                // Clear search
+                document.getElementById('lastMileSearch').value = '';
+                document.getElementById('lastMileResults').style.display = 'none';
+            } else {
+                showAlert(data.error || 'Failed to link last mile', 'danger');
+            }
+        })
+        .catch(() => showAlert('An error occurred', 'danger'));
+}
+
+// Remove a last mile link
+function removeLastMile(parentId, lastMileId) {
+    const formData = new FormData();
+    formData.append('action', 'remove_last_mile');
+    formData.append('parent_id', parentId);
+    formData.append('last_mile_id', lastMileId);
+
+    fetch('api.php', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const el = document.querySelector(`[data-last-mile-id="${lastMileId}"]`);
+                if (el) el.remove();
+                // Show "None linked" if empty
+                const list = document.getElementById('lastMileList');
+                if (!list.querySelector('[data-last-mile-id]')) {
+                    list.innerHTML = '<span class="text-muted" id="noLastMile">None linked</span>';
+                }
+            } else {
+                showAlert(data.error || 'Failed to remove link', 'danger');
+            }
+        })
+        .catch(() => showAlert('An error occurred', 'danger'));
 }
 
 // Show alert message

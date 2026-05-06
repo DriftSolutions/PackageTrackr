@@ -50,6 +50,14 @@ switch ($action) {
         handleSearch();
         break;
 
+    case 'add_last_mile':
+        handleAddLastMile();
+        break;
+
+    case 'remove_last_mile':
+        handleRemoveLastMile();
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Invalid action']);
         break;
@@ -156,11 +164,13 @@ function handleDetails() {
     $tracking['supports_17track'] = get17TrackCarrierCode($tracking['carrier']) !== 0;
 
     $events = getTrackingEvents($id);
+    $lastMile = getLastMileTrackingNumbers($id);
 
     echo json_encode([
         'success' => true,
         'tracking' => $tracking,
-        'events' => $events
+        'events' => $events,
+        'last_mile' => $lastMile
     ]);
 }
 
@@ -215,4 +225,73 @@ function handleToggleOutgoing() {
     $newStatus = !$tracking['is_outgoing'];
     $success = updateTrackingNumber($user_id, $id, ['is_outgoing' => $newStatus]);
     echo json_encode(['success' => $success, 'is_outgoing' => $newStatus]);
+}
+
+// Handle adding an existing tracking number as a last mile link
+function handleAddLastMile() {
+    global $user_id;
+
+    $parentId = $_POST['parent_id'] ?? null;
+    $childTrackingNumber = $_POST['tracking_number'] ?? null;
+
+    if (!$parentId || !$childTrackingNumber) {
+        echo json_encode(['success' => false, 'error' => 'Parent ID and tracking number are required']);
+        return;
+    }
+
+    // Verify the parent belongs to this user
+    $parent = getTrackingNumberById($user_id, $parentId);
+    if (!$parent) {
+        echo json_encode(['success' => false, 'error' => 'Parent tracking number not found']);
+        return;
+    }
+
+    // Verify the child tracking number exists for this user
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("SELECT id, carrier, tracking_number FROM tracking_numbers WHERE user_id = ? AND tracking_number = ?");
+    $stmt->execute([$user_id, strtoupper(preg_replace('/\s+/', '', $childTrackingNumber))]);
+    $child = $stmt->fetch();
+
+    if (!$child) {
+        echo json_encode(['success' => false, 'error' => 'Tracking number not found in your packages']);
+        return;
+    }
+
+    // Don't allow linking to itself
+    if ($child['id'] == $parentId) {
+        echo json_encode(['success' => false, 'error' => 'Cannot link a tracking number to itself']);
+        return;
+    }
+
+    $success = addLastMileTracking($parentId, $child['tracking_number'], $child['carrier']);
+
+    if ($success) {
+        $lastMile = getLastMileTrackingNumbers($parentId);
+        echo json_encode(['success' => true, 'last_mile' => $lastMile]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Failed to add last mile link (may already exist)']);
+    }
+}
+
+// Handle removing a last mile link
+function handleRemoveLastMile() {
+    global $user_id;
+
+    $parentId = $_POST['parent_id'] ?? null;
+    $lastMileId = $_POST['last_mile_id'] ?? null;
+
+    if (!$parentId || !$lastMileId) {
+        echo json_encode(['success' => false, 'error' => 'Parent ID and last mile ID are required']);
+        return;
+    }
+
+    // Verify the parent belongs to this user
+    $parent = getTrackingNumberById($user_id, $parentId);
+    if (!$parent) {
+        echo json_encode(['success' => false, 'error' => 'Parent tracking number not found']);
+        return;
+    }
+
+    $success = removeLastMileTracking($parentId, $lastMileId);
+    echo json_encode(['success' => $success]);
 }
