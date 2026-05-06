@@ -88,6 +88,18 @@ $domain = substr(TRACKING_EMAIL, strpos(TRACKING_EMAIL, '@') + 1);
 foreach ($emails as $emailNum) {
     $header = imap_headerinfo($imap, $emailNum);
     $subject = isset($header->subject) ? $header->subject : '';
+    // Decode MIME encoded-word syntax (e.g. =?UTF-8?B?...?= or =?UTF-8?Q?...?=)
+    $decodedParts = imap_mime_header_decode($subject);
+    if ($decodedParts) {
+        $subject = '';
+        foreach ($decodedParts as $part) {
+            $charset = strtolower($part->charset);
+            $text = ($charset !== 'default' && $charset !== 'us-ascii')
+                ? iconv($charset, 'ASCII//TRANSLIT//IGNORE', $part->text)
+                : $part->text;
+            $subject .= $text;
+        }
+    }
 	if (strncasecmp($subject, 'FW:', 3) == 0) {
 		$subject = trim(substr($subject, 3));
 	} else if (strncasecmp($subject, 'FWD:', 4) == 0) {
@@ -282,6 +294,12 @@ function getEmailBody($imap, $emailNum) {
     if (!isset($structure->parts)) {
         // Simple email without parts
         $body = imap_body($imap, $emailNum);
+        // Decode based on encoding
+        if ($structure->encoding == 3) {
+            $body = imap_base64($body);
+        } elseif ($structure->encoding == 4) {
+            $body = imap_qprint($body);
+        }
     } else {
         // Multipart email - extract text/plain part first, then text/html
         foreach ($structure->parts as $partNum => $part) {
