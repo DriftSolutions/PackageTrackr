@@ -32,6 +32,7 @@ class AaaCooperCarrier extends Carrier {
     }
 
     public function getTrackingUrl(string $trackingNumber): string {
-        return 'https://www.aaacooper.com/pwb/Transit/ProTrackResults.aspx?ProNum=' . urlencode($trackingNumber) . '&AllAccounts=true';
+        return 'https://www.aaacooper.com/workspace/action-trac?id=' . urlencode($trackingNumber) . '&PG=ProNumber';
+//        return 'https://www.aaacooper.com/pwb/Transit/ProTrackResults.aspx?ProNum=' . urlencode($trackingNumber) . '&AllAccounts=true';
     }
 }
