@@ -220,7 +220,7 @@ foreach ($emails as $emailNum) {
 
             // Handle Amazon email status updates
             if ($carrier === 'Amazon') {
-                $amazonData = getAmazonStatusFromSubject($subject);
+                $amazonData = getAmazonStatusFromSubject($subject, $body);
                 if ($amazonData) {
                     updateTrackingNumber($userId, $trackingNumberId, $amazonData);
                     logMessage("    Set Amazon status to: {$amazonData['status']}");
@@ -241,7 +241,7 @@ foreach ($emails as $emailNum) {
 
                 // Handle Amazon email status updates for existing tracking numbers
                 if ($carrier === 'Amazon' && isset($result['id'])) {
-                    $amazonData = getAmazonStatusFromSubject($subject);
+                    $amazonData = getAmazonStatusFromSubject($subject, $body);
                     if ($amazonData) {
                         updateTrackingNumber($userId, $result['id'], $amazonData);
                         logMessage("    Updated Amazon status to: {$amazonData['status']}");
@@ -360,7 +360,7 @@ function extractTrackingNumbers($text) {
  * Determine Amazon order status and related fields from email subject line
  * Returns array with status, raw_status, and date fields as appropriate
  */
-function getAmazonStatusFromSubject($subject) {
+function getAmazonStatusFromSubject($subject, $body) {
     // Strip common email forwarding/reply prefixes (can appear multiple times)
     // Handles: Fwd:, Fw:, FW:, Forward:, Forwarded:, Re:, etc.
     $subject = preg_replace('/^(\s*(fwd|fw|forward|forwarded|re)\s*:\s*)+/i', '', $subject);
@@ -380,10 +380,21 @@ function getAmazonStatusFromSubject($subject) {
         ];
     }
     if (stripos($subject, 'Delivery update:') === 0) {
-        return [
+	if (stripos($body, 'Now arriving today') !== FALSE) {
+	        return [
+	            'status' => 'Out for Delivery',
+	            'raw_status' => 'OutForDelivery',
+        	    'estimated_delivery_date' => $today
+	        ];
+	}
+        $ret = [
             'status' => 'In Transit',
             'raw_status' => 'InTransit'
         ];
+	if (stripos($body, 'Now arriving tomorrow') !== FALSE) {
+		$ret['estimated_delivery_date'] = date('Y-m-d', time() + 86400);
+	}
+	return $ret;
     }
     if (stripos($subject, 'Delay in shipping your Amazon') === 0) {
         return [
