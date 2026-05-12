@@ -19,6 +19,7 @@ require_once __DIR__ . '/AmazonCarrier.php';
 require_once __DIR__ . '/YanwenCarrier.php';
 require_once __DIR__ . '/UniUniCarrier.php';
 require_once __DIR__ . '/AaaCooperCarrier.php';
+require_once __DIR__ . '/FourPxCarrier.php';
 
 class CarrierRegistry {
     private static ?CarrierRegistry $instance = null;
@@ -59,6 +60,7 @@ class CarrierRegistry {
         $this->register(new YanwenCarrier());
         $this->register(new UniUniCarrier());
         $this->register(new AaaCooperCarrier());
+        $this->register(new FourPxCarrier());
     }
 
     /**
