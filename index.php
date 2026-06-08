@@ -21,9 +21,7 @@ if (!in_array($currentView, ['current', 'archive', 'trash'])) {
 $statusFilter = $_GET['status'] ?? 'all';
 
 $trackingNumbers = getTrackingNumbers($user_id, $currentView);
-// For now, show counts for current user only - update getViewCounts if needed
-// This would require modifying the getViewCounts function to accept user_id
-$viewCounts = getViewCounts();
+$viewCounts = getViewCounts($user_id);
 
 // Collect unique statuses from current tracking numbers
 $uniqueStatuses = [];

@@ -214,7 +214,7 @@ function getTrackingNumbersInTrashOlderThan($days = 90) {
 }
 
 // Get counts for each view
-function getViewCounts() {
+function getViewCounts($user_id) {
     $pdo = getDbConnection();
 
     $counts = [
@@ -223,7 +223,8 @@ function getViewCounts() {
         'trash' => 0
     ];
 
-    $stmt = $pdo->query("SELECT view_type, COUNT(*) as count FROM tracking_numbers GROUP BY view_type");
+    $stmt = $pdo->prepare("SELECT view_type, COUNT(*) as count FROM tracking_numbers WHERE user_id = ? GROUP BY view_type");
+    $stmt->execute([$user_id]);
     $results = $stmt->fetchAll();
 
     foreach ($results as $row) {
