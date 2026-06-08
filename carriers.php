@@ -1,6 +1,13 @@
 <?php
 require_once 'includes/config.php';
+require_once 'includes/auth.php';
 require_once 'includes/carriers/CarrierRegistry.php';
+
+$userTheme = 'light';
+if (isAuthenticated()) {
+    $user = getCurrentUser();
+    $userTheme = $user['theme'] ?? 'light';
+}
 
 // Get all carriers and sort them
 $registry = CarrierRegistry::getInstance();
@@ -11,7 +18,7 @@ usort($carriers, function($a, $b) {
 });
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="<?= $userTheme ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,9 +35,10 @@ usort($carriers, function($a, $b) {
             padding: 0 20px;
         }
         .carriers-card {
-            background: white;
+            background: var(--bs-body-bg);
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--bs-border-color);
             padding: 30px;
             margin-bottom: 20px;
         }
@@ -38,10 +46,10 @@ usort($carriers, function($a, $b) {
             font-size: 24px;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #333;
+            color: var(--bs-body-color);
         }
         .carriers-card p.subtitle {
-            color: #999;
+            color: var(--bs-secondary-color, #999);
             margin-bottom: 30px;
             font-size: 14px;
         }
@@ -54,7 +62,7 @@ usort($carriers, function($a, $b) {
             display: flex;
             align-items: center;
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bs-border-color);
         }
         .carrier-item:nth-last-child(-n+2) {
             border-bottom: none;
@@ -67,7 +75,7 @@ usort($carriers, function($a, $b) {
                 border-bottom: none;
             }
             .carrier-item:nth-last-child(2) {
-                border-bottom: 1px solid #eee;
+                border-bottom: 1px solid var(--bs-border-color);
             }
         }
         .carrier-logo {
@@ -79,12 +87,12 @@ usort($carriers, function($a, $b) {
         .carrier-name {
             font-size: 16px;
             font-weight: 500;
-            color: #333;
+            color: var(--bs-body-color);
         }
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
-            color: #667eea;
+            color: var(--bs-primary);
             text-decoration: none;
             font-weight: 600;
         }
@@ -93,7 +101,7 @@ usort($carriers, function($a, $b) {
         }
     </style>
 </head>
-<body style="background-color: #f8f9fa;">
+<body>
     <div class="carriers-container">
         <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Tracking</a>
 

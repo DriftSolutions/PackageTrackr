@@ -604,6 +604,35 @@ function formatDisplayDate(dateString) {
     });
 }
 
+// Theme switcher
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+
+    const formData = new FormData();
+    formData.append('action', 'set_theme');
+    formData.append('theme', next);
+    fetch('api.php', { method: 'POST', body: formData });
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    if (theme === 'dark') {
+        btn.title = 'Switch to Light Mode';
+        btn.innerHTML = btn.dataset.labeled !== undefined
+            ? '<i class="bi bi-sun-fill"></i> Light Mode'
+            : '<i class="bi bi-sun-fill"></i>';
+    } else {
+        btn.title = 'Switch to Dark Mode';
+        btn.innerHTML = btn.dataset.labeled !== undefined
+            ? '<i class="bi bi-moon-stars-fill"></i> Dark Mode'
+            : '<i class="bi bi-moon-stars-fill"></i>';
+    }
+}
+
 // Toggle outgoing shipment status
 function toggleOutgoing(trackingId) {
     const formData = new FormData();

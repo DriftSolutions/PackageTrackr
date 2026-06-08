@@ -197,7 +197,7 @@ function logoutUser() {
 // Get user by ID from database
 function getUserById($user_id) {
     $pdo = getDbConnection();
-    $stmt = $pdo->prepare("SELECT id, email, is_verified, created_at FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, email, is_verified, created_at, theme FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
     return $stmt->fetch();
 }

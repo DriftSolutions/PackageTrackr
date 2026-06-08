@@ -37,9 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $apiKey = getUserSetting($user_id, '17track_api_key', '');
 $claudeApiKey = getUserSetting($user_id, 'claude_api_key', '');
 $secret = getUserSetting($user_id, '17track_secret', '');
+$userTheme = $user['theme'] ?? 'light';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="<?= $userTheme ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,42 +57,45 @@ $secret = getUserSetting($user_id, '17track_secret', '');
             padding: 0 20px;
         }
         .settings-card {
-            background: white;
+            background: var(--bs-body-bg);
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--bs-border-color);
             padding: 30px;
             margin-bottom: 20px;
         }
-        .settings-card h2 {
+        .settings-card h2, .settings-card h3 {
             font-size: 24px;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #333;
+            color: var(--bs-body-color);
         }
         .settings-card p.subtitle {
-            color: #999;
+            color: var(--bs-secondary-color, #999);
             margin-bottom: 30px;
             font-size: 14px;
         }
         .form-label {
             font-weight: 600;
-            color: #333;
+            color: var(--bs-body-color);
             margin-bottom: 8px;
         }
         .form-control {
             padding: 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bs-border-color);
             border-radius: 5px;
             margin-bottom: 20px;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
         }
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.15);
         }
         .form-text {
             font-size: 12px;
-            color: #999;
+            color: var(--bs-secondary-color, #999);
             margin-top: -10px;
             margin-bottom: 15px;
         }
@@ -119,7 +123,7 @@ $secret = getUserSetting($user_id, '17track_secret', '');
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
-            color: #667eea;
+            color: var(--bs-primary);
             text-decoration: none;
             font-weight: 600;
         }
@@ -128,7 +132,7 @@ $secret = getUserSetting($user_id, '17track_secret', '');
         }
     </style>
 </head>
-<body style="background-color: #f8f9fa;">
+<body>
     <div class="settings-container">
         <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Tracking</a>
 

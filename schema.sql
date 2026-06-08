@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_reset_token_expires DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    theme ENUM('light', 'dark') NOT NULL DEFAULT 'light',
     INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

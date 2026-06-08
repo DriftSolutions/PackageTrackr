@@ -8,6 +8,7 @@ require_once 'includes/tracking_api.php';
 requireAuth();
 $user = getCurrentUser();
 $user_id = $user['id'];
+$userTheme = $user['theme'] ?? 'light';
 
 // Check if user has 17track API key set
 $apiKey = getUserSetting($user_id, '17track_api_key', '');
@@ -58,7 +59,7 @@ function getStatusClass($status) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="<?= $userTheme ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,7 +74,7 @@ function getStatusClass($status) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
+        [data-bs-theme="light"] {
             --bs-body-color: var(--bs-secondary);
         }
 
@@ -91,7 +92,7 @@ function getStatusClass($status) {
         }
 
         .view-tabs .nav-link {
-            color: var(--bs-secondary)
+            color: var(--bs-secondary-color);
             border: none;
             border-bottom: 3px solid transparent;
             font-weight: 500;
@@ -149,7 +150,7 @@ function getStatusClass($status) {
         }
 
         .delivery-date.no-estimate {
-            color: var(--bs-secondary);
+            color: var(--bs-secondary-color);
         }
 
         .carrier-badge {
@@ -217,7 +218,7 @@ function getStatusClass($status) {
 
         .last-update {
             font-size: 0.75rem;
-            color: var(--bs-secondary);
+            color: var(--bs-secondary-color);
         }
 
         .quick-track-section {
@@ -253,9 +254,9 @@ function getStatusClass($status) {
             padding: 6px 14px;
             font-size: 13px;
             border-radius: 4px;
-            border: 1px solid #ddd;
-            background: white;
-            color: #333;
+            border: 1px solid var(--bs-border-color);
+            background: var(--bs-body-bg);
+            color: var(--bs-body-color);
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
@@ -302,7 +303,7 @@ function getStatusClass($status) {
             font-weight: 600;
             font-size: 13px;
             margin-right: 8px;
-            color: #666;
+            color: var(--bs-secondary-color, #666);
         }
 
         /* Highlight animation for tracking card */
@@ -353,7 +354,7 @@ function getStatusClass($status) {
         }
 
         .search-box .input-group-text {
-            background: white;
+            background: var(--bs-body-bg);
             border-right: 0;
         }
 
@@ -378,7 +379,7 @@ function getStatusClass($status) {
             right: 0;
             left: 0;
             z-index: 1050;
-            background: white;
+            background: var(--bs-body-bg);
             border: 1px solid var(--bs-border-color);
             border-radius: 0 0 6px 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -405,7 +406,7 @@ function getStatusClass($status) {
         }
 
         .search-result-item:hover {
-            background-color: #f8f9fa;
+            background-color: var(--bs-tertiary-bg, #f8f9fa);
         }
 
         .search-result-info {
@@ -458,6 +459,12 @@ function getStatusClass($status) {
                 <?= SITE_NAME ?>
             </a>
             <div class="ms-auto d-flex gap-2 align-items-center">
+                <button id="theme-toggle-btn"
+                        class="btn btn-light btn-sm"
+                        onclick="toggleTheme()"
+                        title="<?= $userTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode' ?>">
+                    <i class="bi bi-<?= $userTheme === 'dark' ? 'sun-fill' : 'moon-stars-fill' ?>"></i>
+                </button>
                 <a href="carriers.php" class="btn btn-light btn-sm">
                     <i class="bi bi-truck"></i> Supported Carriers
                 </a>
@@ -552,7 +559,7 @@ function getStatusClass($status) {
         </div>
 
         <?php if ($currentView === 'trash'): ?>
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-primary" role="alert">
                 <i class="bi bi-info-circle"></i>
                 <strong>Notice:</strong> Packages in the trash will be automatically deleted after 90 days.
             </div>
@@ -727,7 +734,7 @@ if (!empty($tracking['sub_status'])) {
                                             <i class="bi bi-send"></i>
                                         </button>
                                         <?php if ($currentView === 'current'): ?>
-                                            <button class="btn btn-outline-secondary btn-action"
+                                            <button class="btn btn-outline-primary btn-action"
                                                     onclick="moveToView(<?= $tracking['id'] ?>, 'archive')"
                                                     title="Archive">
                                                 <i class="bi bi-archive"></i>

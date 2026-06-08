@@ -58,6 +58,10 @@ switch ($action) {
         handleRemoveLastMile();
         break;
 
+    case 'set_theme':
+        handleSetTheme();
+        break;
+
     default:
         echo json_encode(['success' => false, 'error' => 'Invalid action']);
         break;
@@ -271,6 +275,20 @@ function handleAddLastMile() {
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to add last mile link (may already exist)']);
     }
+}
+
+// Handle saving the user's theme preference
+function handleSetTheme() {
+    global $user_id;
+    $theme = $_POST['theme'] ?? '';
+    if (!in_array($theme, ['light', 'dark'])) {
+        echo json_encode(['success' => false, 'error' => 'Invalid theme']);
+        return;
+    }
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("UPDATE users SET theme = ? WHERE id = ?");
+    $success = $stmt->execute([$theme, $user_id]);
+    echo json_encode(['success' => $success]);
 }
 
 // Handle removing a last mile link
