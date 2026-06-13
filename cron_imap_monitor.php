@@ -367,35 +367,6 @@ function getAmazonStatusFromSubject($subject, $body) {
 
     $today = date('Y-m-d');
 
-    if (stripos($subject, 'Ordered:') === 0) {
-        return [
-            'status' => 'Information Received',
-            'raw_status' => 'InfoReceived'
-        ];
-    }
-    if (stripos($subject, 'Shipped:') === 0) {
-        return [
-            'status' => 'In Transit',
-            'raw_status' => 'InTransit'
-        ];
-    }
-    if (stripos($subject, 'Delivery update:') === 0) {
-	if (stripos($body, 'Now arriving today') !== FALSE) {
-	        return [
-	            'status' => 'Out for Delivery',
-	            'raw_status' => 'OutForDelivery',
-        	    'estimated_delivery_date' => $today
-	        ];
-	}
-        $ret = [
-            'status' => 'In Transit',
-            'raw_status' => 'InTransit'
-        ];
-	if (stripos($body, 'Now arriving tomorrow') !== FALSE) {
-		$ret['estimated_delivery_date'] = date('Y-m-d', time() + 86400);
-	}
-	return $ret;
-    }
     if (stripos($subject, 'Delay in shipping your Amazon') === 0) {
         return [
             'status' => 'Exception',
@@ -423,5 +394,53 @@ function getAmazonStatusFromSubject($subject, $body) {
             'is_permanent_status' => 1
         ];
     }
+    // Body-based "Arriving" patterns
+    if (preg_match('/\bArriving today\b/i', $body) || stripos($body, 'Now arriving today') !== FALSE) {
+        return [
+            'status' => 'Out for Delivery',
+            'raw_status' => 'OutForDelivery',
+            'estimated_delivery_date' => $today
+        ];
+    }
+    if (preg_match('/\bArriving tomorrow\b/i', $body) || stripos($body, 'Now arriving tomorrow') !== FALSE) {
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit',
+            'estimated_delivery_date' => date('Y-m-d', strtotime('+1 day'))
+        ];
+    }
+    if (preg_match('/\bArriving (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i', $body, $matches)) {
+        $dayName = $matches[1];
+        if (strcasecmp(date('l'), $dayName) === 0) {
+            $deliveryDate = $today;
+        } else {
+            $deliveryDate = date('Y-m-d', strtotime('next ' . $dayName));
+        }
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit',
+            'estimated_delivery_date' => $deliveryDate
+        ];
+    }
+
+    if (stripos($subject, 'Ordered:') === 0) {
+        return [
+            'status' => 'Information Received',
+            'raw_status' => 'InfoReceived'
+        ];
+    }
+    if (stripos($subject, 'Shipped:') === 0) {
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit'
+        ];
+    }
+    if (stripos($subject, 'Delivery update:') === 0) {
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit'
+        ];
+    }
+
     return null;
 }

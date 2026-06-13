@@ -460,16 +460,16 @@ function getStatusClass($status) {
             </a>
             <div class="ms-auto d-flex gap-2 align-items-center">
                 <button id="theme-toggle-btn"
-                        class="btn btn-light btn-sm"
+                        class="btn btn-dark btn-sm"
                         onclick="toggleTheme()"
                         title="<?= $userTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode' ?>">
                     <i class="bi bi-<?= $userTheme === 'dark' ? 'sun-fill' : 'moon-stars-fill' ?>"></i>
                 </button>
-                <a href="carriers.php" class="btn btn-light btn-sm">
+                <a href="carriers.php" class="btn btn-dark btn-sm">
                     <i class="bi bi-truck"></i> Supported Carriers
                 </a>
                 <div class="dropdown">
-                    <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-dark btn-sm dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars(substr($user['email'], 0, 30)); ?>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
@@ -479,7 +479,7 @@ function getStatusClass($status) {
                     </ul>
                 </div>
                 <?php if ($hasApiKey): ?>
-                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addTrackingModal">
+                    <button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addTrackingModal">
                         <i class="bi bi-plus-lg"></i> Add Tracking Number
                     </button>
                 <?php else: ?>
