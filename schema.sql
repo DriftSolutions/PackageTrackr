@@ -109,15 +109,6 @@ CREATE TABLE IF NOT EXISTS tracking_events (
     INDEX idx_event_date (event_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Settings table for application configuration
-CREATE TABLE IF NOT EXISTS settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    setting_key VARCHAR(100) NOT NULL UNIQUE,
-    setting_value TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Pending Claude AI analysis queue
 CREATE TABLE IF NOT EXISTS pending_claude_analysis (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -136,13 +127,6 @@ CREATE TABLE IF NOT EXISTS pending_claude_analysis (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert default global settings
-INSERT INTO settings (setting_key, setting_value) VALUES
-('imap_server', 'imap.gmail.com'),
-('imap_port', '993'),
-('imap_email', 'your-email@gmail.com'),
-('imap_password', 'your-app-password'),
-('imap_folder', 'INBOX'),
-('auto_trash_days', '30'),
-('trash_retention_days', '90')
-ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value);
+-- Note: The global 'settings' table (for app-wide config) has been removed from the schema.
+-- All application configuration now lives in includes/config.php.
+-- User-specific settings (e.g. API keys) remain in the user_settings table.

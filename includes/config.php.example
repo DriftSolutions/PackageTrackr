@@ -1,6 +1,9 @@
 <?php
 // Site Configuration
 define('SITE_NAME', 'PackageTrackr');
+// Canonical site URL (used for email links, webhook examples, etc.)
+// Must include protocol and no trailing slash, e.g. https://packagetrackr.app
+define('SITE_URL', 'https://yourdomain.com');
 
 // Database Configuration
 define('DB_HOST', 'localhost');
@@ -16,6 +19,19 @@ define('EMAIL_FROM_NAME', SITE_NAME);
 define('EMAIL_FROM', 'noreply@packagetrackr.app');
 define('TRACKING_EMAIL', 'tracking@packagetrackr.app');
 
+// IMAP Configuration (for automatic tracking number import via cron_imap_monitor.php)
+// These are sensitive credentials. Store them here instead of the database for better security.
+// The cron will prefer these constants.
+define('IMAP_SERVER', 'imap.gmail.com');
+define('IMAP_PORT', '993');
+define('IMAP_EMAIL', 'your-email@gmail.com');
+define('IMAP_PASSWORD', 'your-app-password');
+define('IMAP_FOLDER', 'INBOX');
+
+// Application Behavior
+define('AUTO_TRASH_DAYS', 30);        // Days after delivery before auto-moving to trash
+define('TRASH_RETENTION_DAYS', 90);   // Days items remain in Trash before permanent deletion
+
 // hCaptcha Configuration
 define('HCAPTCHA_SITEKEY', '');
 define('HCAPTCHA_SECRET', '');
@@ -24,10 +40,6 @@ define('HCAPTCHA_SECRET', '');
 define('SESSION_TIMEOUT', 30 * 24 * 60 * 60); // 30 days in seconds
 define('VERIFICATION_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
 define('PASSWORD_RESET_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
-
-// Canonical site URL (used for email links, webhook examples, etc.)
-// Must include protocol and no trailing slash, e.g. https://packagetrackr.app
-define('SITE_URL', 'https://yourdomain.com');
 
 // Load function files
 require_once __DIR__ . '/functions.inc.php';
