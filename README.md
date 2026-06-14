@@ -64,6 +64,17 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
      define('DB_NAME', 'your_db_name');
      define('EMAIL_FROM', 'noreply@yourdomain.com');
      define('TRACKING_EMAIL', 'tracking@yourdomain.com');
+
+     // IMAP settings for the email import cron (see below)
+     define('IMAP_SERVER', 'imap.gmail.com');
+     define('IMAP_PORT', '993');
+     define('IMAP_EMAIL', 'your-tracking-inbox@gmail.com');
+     define('IMAP_PASSWORD', 'your-app-password');
+     define('IMAP_FOLDER', 'INBOX');
+
+     // Application behavior settings
+     define('AUTO_TRASH_DAYS', 30);
+     define('TRASH_RETENTION_DAYS', 90);
      ```
 
 4. **Set up permissions**
@@ -110,9 +121,26 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
 
 To automatically add tracking numbers from shipping emails:
 
-1. Set up email forwarding rules in your email client
-2. Forward shipping notification emails to the `TRACKING_EMAIL` address configured in `config.php`
-3. The cron job will parse emails and extract tracking numbers automatically
+1. Configure IMAP access in `includes/config.php` (IMAP_SERVER, IMAP_EMAIL, IMAP_PASSWORD, etc.).  
+2. Set up email forwarding rules in your email client
+3. Forward shipping notification emails to the `TRACKING_EMAIL` address configured in `config.php`
+4. Set up the `cron_imap_monitor.php` cron job (see Installation section)
+5. The cron job will parse emails and extract tracking numbers automatically
+
+> **Note:** The IMAP account should be a dedicated low-privilege inbox (e.g. an app-specific password on Gmail). Do not use your personal email credentials.
+
+### Global Application Settings
+
+The following settings control package lifecycle and background behavior. They are defined as constants in `includes/config.php`:
+
+- `AUTO_TRASH_DAYS` — Days after delivery before a package is automatically moved to Trash (default: 30).
+- `TRASH_RETENTION_DAYS` — How long items stay in the Trash view before being permanently deleted (default: 90).
+
+If upgrading from an older version, you may run a one-time cleanup to remove the now-unused global `settings` table (no application code uses it anymore):
+
+```sql
+DROP TABLE IF EXISTS settings;
+```
 
 ## Usage
 

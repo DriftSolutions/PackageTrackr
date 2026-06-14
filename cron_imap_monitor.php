@@ -37,11 +37,11 @@ function logMessage($message) {
 logMessage("=== Starting IMAP monitoring ===");
 
 // Get IMAP settings
-$imapServer = getSetting('imap_server');
-$imapPort = getSetting('imap_port', '993');
-$imapEmail = getSetting('imap_email');
-$imapPassword = getSetting('imap_password');
-$imapFolder = getSetting('imap_folder', 'INBOX');
+$imapServer   = IMAP_SERVER;
+$imapPort     = IMAP_PORT;
+$imapEmail    = IMAP_EMAIL;
+$imapPassword = IMAP_PASSWORD;
+$imapFolder   = IMAP_FOLDER;
 
 // Validate settings
 if (!$imapServer || !$imapEmail || !$imapPassword ||

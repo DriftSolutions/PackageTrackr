@@ -34,6 +34,12 @@ if (session_status() === PHP_SESSION_NONE) {
             // Update last used time
             $stmt = $pdo->prepare("UPDATE remember_tokens SET last_used_at = NOW() WHERE id = ?");
             $stmt->execute([$tokenRecord['id']]);
+        } else {
+            // The remember-me cookie is invalid or expired. Remove the (stale) entry
+            // from the database and clear the cookie so we don't keep checking it.
+            setcookie('remember_token', '', time() - 3600, '/', '', true, true);
+            $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE token = ?");
+            $stmt->execute([$tokenHash]);
         }
     }
 }
@@ -44,6 +50,16 @@ if (session_status() === PHP_SESSION_NONE) {
  */
 function hashRememberToken($rawToken) {
     return hash('sha256', $rawToken);
+}
+
+/**
+ * Delete expired remember-me tokens for a specific user.
+ * Called on login for housekeeping so the table doesn't accumulate old entries.
+ */
+function cleanupExpiredRememberTokens($user_id) {
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE user_id = ? AND expires_at <= NOW()");
+    $stmt->execute([$user_id]);
 }
 
 // Check if user is authenticated
@@ -159,6 +175,9 @@ function loginUser($email, $password, $remember_me = false) {
     if (!password_verify($password, $user['password_hash'])) {
         return ['success' => false, 'error' => 'Invalid email or password'];
     }
+
+    // Clean up any expired remember-me tokens for this user (housekeeping)
+    cleanupExpiredRememberTokens($user['id']);
 
     // Set session
     $_SESSION['user_id'] = $user['id'];
@@ -283,6 +302,10 @@ function resetPassword($token, $newPassword) {
         $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_token_expires = NULL
                               WHERE id = ?");
         $stmt->execute([$password_hash, $user['id']]);
+
+        // On password reset, invalidate *all* remember-me tokens for this user (security best practice)
+        $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE user_id = ?");
+        $stmt->execute([$user['id']]);
 
         return [
             'success' => true,

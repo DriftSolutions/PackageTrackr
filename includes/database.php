@@ -161,32 +161,6 @@ function getTrackingEvents($trackingNumberId) {
     return $stmt->fetchAll();
 }
 
-// Get tracking numbers that need updates
-function getTrackingNumbersForUpdate() {
-    $pdo = getDbConnection();
-
-    $startHour = (int)getSetting('update_start_hour', 8);
-    $endHour = (int)getSetting('update_end_hour', 22);
-    $currentHour = (int)date('G');
-
-    // Only return results if current time is within update window
-    if ($currentHour < $startHour || $currentHour >= $endHour) {
-        return [];
-    }
-
-    // Get tracking numbers that:
-    // 1. Are not in permanent status
-    // 2. Haven't been checked in the last hour OR never been checked
-    // 3. Are in current view
-    $stmt = $pdo->prepare("SELECT * FROM tracking_numbers
-                          WHERE is_permanent_status = FALSE
-                          AND view_type = 'current'
-                          AND (last_api_check IS NULL OR last_api_check < DATE_SUB(NOW(), INTERVAL 1 HOUR))
-                          ORDER BY last_api_check ASC LIMIT 50");
-    $stmt->execute();
-    return $stmt->fetchAll();
-}
-
 // Get delivered packages older than specified days
 function getDeliveredPackagesForAutoTrash($days = 30) {
     $pdo = getDbConnection();
@@ -290,32 +264,7 @@ function detectCarrier($trackingNumber) {
     return null;
 }
 
-// Get setting value from database
-function getSetting($key, $default = null) {
-    try {
-        $pdo = getDbConnection();
-        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
-        $stmt->execute([$key]);
-        $result = $stmt->fetch();
-        return $result ? $result['setting_value'] : $default;
-    } catch (PDOException $e) {
-        error_log("Error getting setting '$key': " . $e->getMessage());
-        return $default;
-    }
-}
-
-// Update setting value in database
-function setSetting($key, $value) {
-    try {
-        $pdo = getDbConnection();
-        $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)
-                              ON DUPLICATE KEY UPDATE setting_value = ?");
-        return $stmt->execute([$key, $value, $value]);
-    } catch (PDOException $e) {
-        error_log("Error setting '$key': " . $e->getMessage());
-        return false;
-    }
-}
+// Get user-specific setting
 
 // Get user-specific setting
 function getUserSetting($user_id, $key, $default = null) {

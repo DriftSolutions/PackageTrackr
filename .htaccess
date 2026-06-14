@@ -25,15 +25,14 @@ Options -Indexes
 
 # Protect sensitive files
 <FilesMatch "^(config\.php|\.env|\.git|\.claude)">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Protect log files
-#<DirectoryMatch "logs">
-#    Order allow,deny
-#    Deny from all
-#</DirectoryMatch>
+# (Also covered by logs/.htaccess)
+<DirectoryMatch "logs">
+    Require all denied
+</DirectoryMatch>
 
 # PHP settings
 <IfModule mod_php8.c>
@@ -57,4 +56,22 @@ Options -Indexes
 # Compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+# Security Headers (Apache 2.4+)
+<IfModule mod_headers.c>
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Clickjacking protection
+    Header always set X-Frame-Options "DENY"
+
+    # Referrer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions Policy (restrict powerful features)
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # HSTS - Force HTTPS for 1 year (uncomment after confirming HTTPS works everywhere)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>

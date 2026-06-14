@@ -34,7 +34,7 @@ function logMessage($message) {
 logMessage("=== Starting auto-trash process ===");
 
 // Get the configured number of days
-$autoTrashDays = (int)getSetting('auto_trash_days', 30);
+$autoTrashDays = AUTO_TRASH_DAYS;
 logMessage("Auto-trash configured for packages delivered more than {$autoTrashDays} days ago");
 
 // Get delivered packages older than the configured days
@@ -83,7 +83,7 @@ logMessage("");
 
 logMessage("=== Starting trash cleanup process ===");
 
-$trashRetentionDays = (int)getSetting('trash_retention_days', 90);
+$trashRetentionDays = TRASH_RETENTION_DAYS;
 logMessage("Trash retention configured for {$trashRetentionDays} days");
 
 // Get tracking numbers in trash older than the configured days
