@@ -38,9 +38,10 @@ This is mainly designed as a self-hosted app for personal use, so you should pro
 
 - **Web Server**: Apache with mod_rewrite
 - **PHP**: 7.4 or higher
-  - PDO extension
+  - PDO extension with pdo_mysql driver (for MySQL/MariaDB)
   - cURL extension
-  - MailParse extension (for email tracking number extraction)
+  - IMAP extension (php-imap) — required for the optional email import cron (`cron_imap_monitor.php`)
+  - iconv extension — used for decoding email headers in the IMAP importer
 - **Database**: MySQL 5.7+ or MariaDB 10.2+
 - **17track Account**: Free tier allows up to 100 packages per month
 
@@ -125,11 +126,12 @@ This is mainly designed as a self-hosted app for personal use, so you should pro
 
 To automatically add tracking numbers from shipping emails:
 
-1. Configure IMAP access in `includes/config.php` (IMAP_SERVER, IMAP_EMAIL, IMAP_PASSWORD, etc.).  
-2. Set up email forwarding rules in your email client
-3. Forward shipping notification emails to the `TRACKING_EMAIL` address configured in `config.php`
-4. Set up the `cron_imap_monitor.php` cron job (see Installation section)
-5. The cron job will parse emails and extract tracking numbers automatically
+1. Ensure the IMAP (php-imap) and iconv PHP extensions are installed (see Requirements above).
+2. Configure IMAP access in `includes/config.php` (IMAP_SERVER, IMAP_EMAIL, IMAP_PASSWORD, etc.).  
+3. Set up email forwarding rules in your email client
+4. Forward shipping notification emails to the `TRACKING_EMAIL` address configured in `config.php`
+5. Set up the `cron_imap_monitor.php` cron job (see Installation section)
+6. The cron job will parse emails and extract tracking numbers automatically
 
 > **Note:** The IMAP account should be a dedicated low-privilege inbox (e.g. an app-specific password on Gmail). Do not use your personal email credentials.
 
