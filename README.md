@@ -30,6 +30,10 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
   - Color-coded status badges and indicators
 - **Automatic Management**: Auto-archive delivered packages and auto-trash old deliveries
 
+## Security
+
+This is mainly designed as a self-hosted app for personal use, so you should protect it with an .htaccess password or something if you can. It doesn't have brute force protection, CSRF protection, etc. When using the email forwarding feature, don't forget that emails are pretty easily spoofed so don't use it to make financial decisions.
+
 ## Requirements
 
 - **Web Server**: Apache with mod_rewrite
