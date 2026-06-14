@@ -6,7 +6,6 @@
  * Setup in 17track Dashboard:
  * - Webhook URL: https://yourdomain.com/webhook.php
  * - Content Type: application/json
- * - Protected with .htaccess password authentication
  */
 
 require_once 'includes/config.php';
@@ -125,8 +124,6 @@ function extractUserIdFromWebhook($webhookData) {
         }
     }
 
-    return 1;
-
     return null;
 }
 
@@ -136,8 +133,7 @@ function verifyWebhookSignature($webhookData, $user_id, $rawInput) {
 
     if (!$secret || empty($secret)) {
         logWebhook("WARNING: No 17track_api_key configured for user {$user_id}");
-        // Allow webhook to proceed if no secret is configured (for backward compatibility)
-        return true;
+        return false;
     }
 
     // Get signature from headers

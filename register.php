@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = registerUser($email, $password);
             if ($result['success']) {
                 // Send verification email
-                $verify_link = 'https://' . $_SERVER['HTTP_HOST'] . '/verify-email.php?token=' . $result['verification_token'];
+                $verify_link = rtrim(SITE_URL, '/') . '/verify-email.php?token=' . $result['verification_token'];
                 $email_subject = 'Verify Your Email - ' . SITE_NAME;
                 $email_body = "Welcome to " . SITE_NAME . "!\n\n";
                 $email_body .= "Please verify your email address by clicking the link below:\n\n";

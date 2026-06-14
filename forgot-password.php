@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Send email if user exists
         if (isset($result['reset_token']) && isset($result['user_id'])) {
-            $reset_link = 'https://' . $_SERVER['HTTP_HOST'] . '/reset-password.php?token=' . $result['reset_token'];
+            $reset_link = rtrim(SITE_URL, '/') . '/reset-password.php?token=' . $result['reset_token'];
             $email_subject = 'Reset Your Password - ' . SITE_NAME;
             $email_body = "Hello,\n\n";
             $email_body .= "We received a request to reset the password for your " . SITE_NAME . " account.\n\n";

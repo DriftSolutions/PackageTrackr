@@ -14,13 +14,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 
     // Check for remember-me token if no active session
+    // The cookie contains the raw token; we look it up by its hash in the database.
     if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
-        $token = $_COOKIE['remember_token'];
+        $rawToken = $_COOKIE['remember_token'];
+        $tokenHash = hashRememberToken($rawToken);
         $pdo = getDbConnection();
         $stmt = $pdo->prepare("SELECT rt.id, rt.user_id, u.email FROM remember_tokens rt
                               JOIN users u ON rt.user_id = u.id
                               WHERE rt.token = ? AND rt.expires_at > NOW()");
-        $stmt->execute([$token]);
+        $stmt->execute([$tokenHash]);
         $tokenRecord = $stmt->fetch();
 
         if ($tokenRecord) {
@@ -34,6 +36,14 @@ if (session_status() === PHP_SESSION_NONE) {
             $stmt->execute([$tokenRecord['id']]);
         }
     }
+}
+
+/**
+ * Hash a remember-me token for database storage.
+ * The raw token is only ever held in the HttpOnly cookie; the DB stores the hash.
+ */
+function hashRememberToken($rawToken) {
+    return hash('sha256', $rawToken);
 }
 
 // Check if user is authenticated
@@ -156,16 +166,18 @@ function loginUser($email, $password, $remember_me = false) {
     $_SESSION['login_time'] = time();
 
     // Generate and store remember-me token if requested (30 days)
+    // We store only a SHA-256 hash of the token in the database. The raw value lives only in the cookie.
     if ($remember_me) {
-        $remember_token = bin2hex(random_bytes(32));
+        $remember_token = bin2hex(random_bytes(32)); // raw value for cookie only
+        $tokenHash = hashRememberToken($remember_token);
         $expires_at = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60));
         $device_info = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
 
         $stmt = $pdo->prepare("INSERT INTO remember_tokens (user_id, token, device_info, expires_at)
                               VALUES (?, ?, ?, ?)");
-        $stmt->execute([$user['id'], $remember_token, $device_info, $expires_at]);
+        $stmt->execute([$user['id'], $tokenHash, $device_info, $expires_at]);
 
-        // Set remember-me cookie (30 days)
+        // Set remember-me cookie (30 days) — raw token only
         setcookie('remember_token', $remember_token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
     }
 
@@ -180,10 +192,12 @@ function loginUser($email, $password, $remember_me = false) {
 // Logout user
 function logoutUser() {
     // Clear remember-me token from database if user is logged in
+    // Cookie holds raw token; DB stores the hash.
     if (isset($_COOKIE['remember_token'])) {
         $pdo = getDbConnection();
+        $tokenHash = hashRememberToken($_COOKIE['remember_token']);
         $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE token = ?");
-        $stmt->execute([$_COOKIE['remember_token']]);
+        $stmt->execute([$tokenHash]);
     }
 
     // Clear remember-me cookie

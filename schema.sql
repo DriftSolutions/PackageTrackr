@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Remember tokens table for persistent login
+-- The `token` column stores a SHA-256 hash of the actual random token.
+-- Only the raw token value is ever placed in the user's HttpOnly cookie.
+-- See includes/auth.php hashRememberToken() for details.
 CREATE TABLE IF NOT EXISTS remember_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

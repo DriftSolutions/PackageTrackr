@@ -25,5 +25,9 @@ define('SESSION_TIMEOUT', 30 * 24 * 60 * 60); // 30 days in seconds
 define('VERIFICATION_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
 define('PASSWORD_RESET_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
 
+// Canonical site URL (used for email links, webhook examples, etc.)
+// Must include protocol and no trailing slash, e.g. https://packagetrackr.app
+define('SITE_URL', 'https://yourdomain.com');
+
 // Load function files
 require_once __DIR__ . '/functions.inc.php';

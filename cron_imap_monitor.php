@@ -83,7 +83,6 @@ logMessage("Found " . count($emails) . " unread email(s)");
 
 $addedCount = 0;
 $skippedCount = 0;
-$domain = substr(TRACKING_EMAIL, strpos(TRACKING_EMAIL, '@') + 1);
 
 foreach ($emails as $emailNum) {
     $header = imap_headerinfo($imap, $emailNum);
@@ -203,8 +202,8 @@ foreach ($emails as $emailNum) {
 		}
 	}
 
-        // Extract domain from TRACKING_EMAIL for link
-        $trackingLink = "https://{$domain}/?highlight=" . urlencode($trackingNumber);
+        // Use canonical SITE_URL for notification links
+        $trackingLink = rtrim(SITE_URL, '/') . '/?highlight=' . urlencode($trackingNumber);
 
         $result = addTrackingNumber($userId, $trackingNumber, $carrier, $addsubject);
 
