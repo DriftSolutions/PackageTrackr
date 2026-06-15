@@ -186,7 +186,7 @@ function parseTrackInfo($tracking) {
     // Extract status from track_info
     if (!isset($tracking['track_info'])) {
         error_log("parseTrackInfo: No track_info in tracking data");
-        return $result;
+        return null;
     }
 
     $trackInfo = $tracking['track_info'];
@@ -207,6 +207,9 @@ function parseTrackInfo($tracking) {
         if (isset($latestStatus['sub_status'])) {
             $result['sub_status'] = $latestStatus['sub_status'];
         }
+    } else {
+        error_log("parseTrackInfo: No latest_status in tracking data");
+        return null;
     }
 
     // Extract estimated delivery from v2.4 API response
