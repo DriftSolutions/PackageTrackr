@@ -34,16 +34,16 @@ function logMessage($msg) {
     echo $message; // Also output to console for cron logging
 }
 
-logMessage("=== Starting Claude AI processor ===");
+//logMessage("=== Starting Claude AI processor ===");
 
 // Get pending records (batch of 50)
 $pending = getPendingClaudeAnalysis(50);
 $pendingCount = count($pending);
-logMessage("Found $pendingCount pending analysis record(s)");
+//logMessage("Found $pendingCount pending analysis record(s)");
 
 if ($pendingCount === 0) {
-    logMessage("No pending records to process");
-    logMessage("=== Claude AI processor complete ===");
+//    logMessage("No pending records to process");
+//    logMessage("=== Claude AI processor complete ===");
     exit(0);
 }
 

@@ -31,16 +31,16 @@ function logMessage($message) {
     file_put_contents($logFile, $logEntry, FILE_APPEND);
 }
 
-logMessage("=== Starting auto-trash process ===");
+//logMessage("=== Starting auto-trash process ===");
 
 // Get the configured number of days
 $autoTrashDays = AUTO_TRASH_DAYS;
-logMessage("Auto-trash configured for packages delivered more than {$autoTrashDays} days ago");
+//logMessage("Auto-trash configured for packages delivered more than {$autoTrashDays} days ago");
 
 // Get delivered packages older than the configured days
 $packages = getDeliveredPackagesForAutoTrash($autoTrashDays);
 
-logMessage("Found " . count($packages) . " package(s) to move to trash");
+//logMessage("Found " . count($packages) . " package(s) to move to trash");
 
 if (count($packages)) {
 
@@ -81,18 +81,18 @@ logMessage("");
 // Delete old items from trash after 90 days
 // ============================================================================
 
-logMessage("=== Starting trash cleanup process ===");
+//logMessage("=== Starting trash cleanup process ===");
 
 $trashRetentionDays = TRASH_RETENTION_DAYS;
-logMessage("Trash retention configured for {$trashRetentionDays} days");
+//logMessage("Trash retention configured for {$trashRetentionDays} days");
 
 // Get tracking numbers in trash older than the configured days
 $oldTrashItems = getTrackingNumbersInTrashOlderThan($trashRetentionDays);
 
-logMessage("Found " . count($oldTrashItems) . " item(s) in trash to delete");
+//logMessage("Found " . count($oldTrashItems) . " item(s) in trash to delete");
 
 if (empty($oldTrashItems)) {
-    logMessage("No items in trash need to be deleted. Exiting.");
+//    logMessage("No items in trash need to be deleted. Exiting.");
     exit(0);
 }
 
