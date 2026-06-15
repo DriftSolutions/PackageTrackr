@@ -226,6 +226,15 @@ foreach ($emails as $emailNum) {
                 }
             }
 
+            // Handle USPS Informed Delivery emails (special parsing for forwarded notifications)
+            if ($carrier === 'USPS' && stristr($body, '@tracking.usps.com') !== false) {
+                $uspsData = getUSPSInformedDeliveryStatus($subject, $body);
+                if ($uspsData) {
+                    updateTrackingNumber($userId, $trackingNumberId, $uspsData);
+                    logMessage("    Set USPS Informed Delivery status to: {$uspsData['status']}");
+                }
+            }
+
             // If user has Claude API key, queue email for AI analysis
             $claudeApiKey = getUserSetting($userId, 'claude_api_key', '');
             if (!empty($claudeApiKey)) {
@@ -244,6 +253,15 @@ foreach ($emails as $emailNum) {
                     if ($amazonData) {
                         updateTrackingNumber($userId, $result['id'], $amazonData);
                         logMessage("    Updated Amazon status to: {$amazonData['status']}");
+                    }
+                }
+
+                // Handle USPS Informed Delivery for existing tracking numbers
+                if ($carrier === 'USPS' && isset($result['id']) && stristr($body, '@tracking.usps.com') !== false) {
+                    $uspsData = getUSPSInformedDeliveryStatus($subject, $body);
+                    if ($uspsData) {
+                        updateTrackingNumber($userId, $result['id'], $uspsData);
+                        logMessage("    Updated USPS Informed Delivery status to: {$uspsData['status']}");
                     }
                 }
             } else {
@@ -438,6 +456,30 @@ function getAmazonStatusFromSubject($subject, $body) {
         return [
             'status' => 'In Transit',
             'raw_status' => 'InTransit'
+        ];
+    }
+
+    return null;
+}
+
+/**
+ * Determine USPS Informed Delivery status from email subject/body.
+ * Only intended to be called for USPS carrier when body contains "@tracking.usps.com".
+ * Returns array with status, raw_status, and date fields as appropriate (mirrors Amazon handling).
+ */
+function getUSPSInformedDeliveryStatus($subject, $body) {
+    // Strip common email forwarding/reply prefixes (can appear multiple times)
+    // Handles: Fwd:, Fw:, FW:, Forward:, Forwarded:, Re:, etc.
+    $subject = preg_replace('/^(\s*(fwd|fw|forward|forwarded|re)\s*:\s*)+/i', '', $subject);
+
+    $today = date('Y-m-d');
+
+    if (stripos($subject, 'Item Delivered') !== false) {
+        return [
+            'status' => 'Delivered',
+            'raw_status' => 'Delivered',
+            'delivered_date' => $today,
+            'is_permanent_status' => 1
         ];
     }
 

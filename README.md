@@ -14,6 +14,7 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
 - **Real-Time Updates**: Webhook integration with 17track API for instant tracking updates (they don't seem to be super fast, at least not on the free tier)
 - **Email Integration**: Forward shipping emails to automatically extract and add tracking numbers
 - **Amazon Tracking**: If you use the email integration feature, it will virtually track your Amazon orders from those emails. Amazon doesn't provide a tracking API, so that's the best we can do
+- **USPS Informed Delivery Tracking**: At the time of this writing, 17track is having issues with USPS tracking due to USPS's restrictions. We now support handling forwarded USPS Informed Delivery emails too
 - **User Authentication**: Secure user registration and login system
 - **Package Organization**:
   - Multiple views (Current, Archive, Trash)

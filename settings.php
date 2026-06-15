@@ -139,7 +139,7 @@ $userTheme = $user['theme'] ?? 'light';
 
         <div class="settings-card">
             <h2><i class="bi bi-gear"></i> Settings</h2>
-            <p class="subtitle">We use the 17track API to track packages, you will need to create an account with them to get an API key to track your packages. They allow up to 100 packages per month for free and you can find your security key <a href="https://admin.17track.net/api/settings">here</a>. Set the WebHook URL to <code><?= htmlspecialchars(rtrim(SITE_URL, '/')) ?>/webhook.php</code> and version to <code>V 2.4</code>. Set up filters in your email client to forward shipping emails to <code><?= htmlspecialchars(TRACKING_EMAIL) ?></code> if you want them to be added automatically.</p>
+            <p class="subtitle">We use the 17track API to track packages, you will need to create an account with them to get an API key to track your packages. They allow up to 100 packages per month for free and you can find your security key <a href="https://admin.17track.net/api/settings">here</a>. Set the WebHook URL to <code><?= htmlspecialchars(rtrim(SITE_URL, '/')) ?>/webhook.php</code> and version to <code>V 2.4</code>. Set up filters in your email client to forward shipping emails to <code><?= htmlspecialchars(TRACKING_EMAIL) ?></code> if you want them to be added automatically. We also handle forwarded Amazon and USPS Informed Delivery emails too.</p>
 
             <?php if ($success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
