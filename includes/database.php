@@ -266,6 +266,48 @@ function detectCarrier($trackingNumber) {
 
 // Get user-specific setting
 
+/**
+ * Internal helper to encrypt a value for storage in user_settings.
+ * The $key parameter should be a user-specific key (derived from master ENCRYPTION_KEY + user_id).
+ * Returns value prefixed with 'enc:' + base64(iv + ciphertext) when encryption is enabled.
+ */
+function _encryptUserSetting($value, $key) {
+    if ($value === null || $value === '') {
+        return $value;
+    }
+    $iv = random_bytes(16);
+    $ciphertext = openssl_encrypt($value, 'AES-256-CBC', $key, 0, $iv);
+    if ($ciphertext === false) {
+        error_log('User setting encryption failed');
+        return $value;
+    }
+    return 'enc:' . base64_encode($iv . $ciphertext);
+}
+
+/**
+ * Internal helper to decrypt a value from user_settings.
+ * The $key parameter should be a user-specific key (derived from master ENCRYPTION_KEY + user_id).
+ * Falls back to returning the original value if it is not encrypted or decryption fails
+ * (supports reading legacy plaintext data).
+ */
+function _decryptUserSetting($value, $key) {
+    if (!is_string($value) || $value === '' || strpos($value, 'enc:') !== 0) {
+        return $value; // legacy plaintext or empty
+    }
+    $data = base64_decode(substr($value, 4), true);
+    if ($data === false || strlen($data) < 16) {
+        return $value; // malformed
+    }
+    $iv = substr($data, 0, 16);
+    $ciphertext = substr($data, 16);
+    $decrypted = openssl_decrypt($ciphertext, 'AES-256-CBC', $key, 0, $iv);
+    if ($decrypted === false) {
+        error_log('User setting decryption failed; falling back to stored value');
+        return $value;
+    }
+    return $decrypted;
+}
+
 // Get user-specific setting
 function getUserSetting($user_id, $key, $default = null) {
     try {
@@ -273,7 +315,16 @@ function getUserSetting($user_id, $key, $default = null) {
         $stmt = $pdo->prepare("SELECT setting_value FROM user_settings WHERE user_id = ? AND setting_key = ?");
         $stmt->execute([$user_id, $key]);
         $result = $stmt->fetch();
-        return $result ? $result['setting_value'] : $default;
+        if ($result) {
+            $val = $result['setting_value'];
+            if (defined('ENCRYPTION_KEY') && ENCRYPTION_KEY) {
+                // Derive a user-specific key using HMAC with the master key + user_id
+                $encKey = hash_hmac('sha256', (string)$user_id, ENCRYPTION_KEY, true);
+                $val = _decryptUserSetting($val, $encKey);
+            }
+            return $val;
+        }
+        return $default;
     } catch (PDOException $e) {
         error_log("Error getting user setting '$key' for user $user_id: " . $e->getMessage());
         return $default;
@@ -284,9 +335,15 @@ function getUserSetting($user_id, $key, $default = null) {
 function setUserSetting($user_id, $key, $value) {
     try {
         $pdo = getDbConnection();
+        $toStore = $value;
+        if (defined('ENCRYPTION_KEY') && ENCRYPTION_KEY) {
+            // Derive a user-specific key using HMAC with the master key + user_id
+            $encKey = hash_hmac('sha256', (string)$user_id, ENCRYPTION_KEY, true);
+            $toStore = _encryptUserSetting($value, $encKey);
+        }
         $stmt = $pdo->prepare("INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, ?, ?)
                               ON DUPLICATE KEY UPDATE setting_value = ?");
-        return $stmt->execute([$user_id, $key, $value, $value]);
+        return $stmt->execute([$user_id, $key, $toStore, $toStore]);
     } catch (PDOException $e) {
         error_log("Error setting '$key' for user $user_id: " . $e->getMessage());
         return false;

@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS remember_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- User-specific settings table
+-- Sensitive values (e.g. API keys) are now encrypted at rest when ENCRYPTION_KEY is set in config.php.
+-- A user-specific encryption key is derived using HMAC with the user_id.
+-- Plaintext legacy values are still readable as a fallback.
 CREATE TABLE IF NOT EXISTS user_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

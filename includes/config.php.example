@@ -11,6 +11,15 @@ define('DB_USER', 'tracking');
 define('DB_PASS', '');
 define('DB_NAME', 'tracking');
 
+// Master encryption key for sensitive per-user settings (17track API key, Claude API key, etc.)
+// A user-specific key is derived as hash_hmac('sha256', $user_id, ENCRYPTION_KEY, true).
+// Stored in the user_settings table. If left empty, values are stored in plaintext (for backward compatibility).
+// To enable encryption, set this to a strong random string (at least 32 bytes recommended).
+// Generate one with: openssl rand -base64 32
+// Once set, new values will be encrypted; existing plaintext values will still be readable as fallback.
+// WARNING: Changing this key will make previously encrypted settings unreadable.
+define('ENCRYPTION_KEY', '');
+
 // Timezone
 date_default_timezone_set('America/New_York');
 
