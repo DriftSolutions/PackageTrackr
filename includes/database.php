@@ -86,7 +86,7 @@ function getTrackingNumberById($user_id, $id) {
 function updateTrackingNumber($user_id, $id, $data) {
     $pdo = getDbConnection();
 
-    $allowedFields = ['package_name', 'status', 'raw_status', 'sub_status', 'view_type', 'estimated_delivery_date', 'delivered_date',
+    $allowedFields = ['package_name', 'status', 'raw_status', 'sub_status', 'recipient_city', 'view_type', 'estimated_delivery_date', 'delivered_date',
                      'last_event_date', 'is_permanent_status', 'is_outgoing', 'raw_api_response', 'last_api_check'];
 
     $updateFields = [];

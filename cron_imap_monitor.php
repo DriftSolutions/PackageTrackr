@@ -116,16 +116,39 @@ foreach ($emails as $emailNum) {
             }
         }
     }
+    $toAddress = '';
+    if (isset($header->to) && is_array($header->to)) {
+        foreach ($header->to as $to) {
+            if (isset($to->mailbox) && isset($to->host)) {
+                $toAddress = $to->mailbox . '@' . $to->host;
+                break;
+            }
+        }
+    }
+    $senderAddress = '';
+    if (isset($header->sender) && is_array($header->sender)) {
+        foreach ($header->sender as $sender) {
+            if (isset($sender->mailbox) && isset($sender->host)) {
+                $senderAddress = $sender->mailbox . '@' . $sender->host;
+                break;
+            }
+        }
+    }
 	if (isset($header->in_reply_to)) {
 		$from_fedex = (strstr($header->in_reply_to, 'fedex.com') !== FALSE);
 	}
 
-    logMessage("Processing email #$emailNum: From: '$fromAddress' Subject: '$subject'");
+    logMessage("Processing email #$emailNum: From: '$fromAddress' To: '$toAddress' Subject: '$subject'");
 
     // Look up user by email address
     $user = getUserByEmail($fromAddress);
     if (!$user) {
         logMessage("  No user found with email: $fromAddress");
+        $user = getUserByEmail($toAddress);
+        $fromAddress = $toAddress;
+    }
+    if (!$user) {
+        logMessage("  No user found with email: $toAddress");
         $skippedCount++;
         // Mark as read and delete
         imap_setflag_full($imap, $emailNum, "\\Seen");
@@ -227,7 +250,7 @@ foreach ($emails as $emailNum) {
             }
 
             // Handle USPS Informed Delivery emails (special parsing for forwarded notifications)
-            if ($carrier === 'USPS' && stristr($body, '@tracking.usps.com') !== false) {
+            if ($carrier === 'USPS' && (stristr($body, '@tracking.usps.com') !== false || stristr($fromAddress, '@tracking.usps.com') !== false || stristr($senderAddress, '@tracking.usps.com') !== false)) {
                 $uspsData = getUSPSInformedDeliveryStatus($subject, $body);
                 if ($uspsData) {
                     updateTrackingNumber($userId, $trackingNumberId, $uspsData);
@@ -257,7 +280,7 @@ foreach ($emails as $emailNum) {
                 }
 
                 // Handle USPS Informed Delivery for existing tracking numbers
-                if ($carrier === 'USPS' && isset($result['id']) && stristr($body, '@tracking.usps.com') !== false) {
+                if ($carrier === 'USPS' && isset($result['id']) && (stristr($body, '@tracking.usps.com') !== false || stristr($fromAddress, '@tracking.usps.com') !== false || stristr($senderAddress, '@tracking.usps.com') !== false)) {
                     $uspsData = getUSPSInformedDeliveryStatus($subject, $body);
                     if ($uspsData) {
                         updateTrackingNumber($userId, $result['id'], $uspsData);
@@ -480,6 +503,23 @@ function getUSPSInformedDeliveryStatus($subject, $body) {
             'raw_status' => 'Delivered',
             'delivered_date' => $today,
             'is_permanent_status' => 1
+        ];
+    }
+
+    // "Expected Delivery by Thursday, July 2, 2026"
+    if (preg_match('/Expected Delivery by\s+\w+,\s+(\w+\s+\d+,\s+\d{4})/i', $subject, $matches)) {
+        $deliveryDate = date('Y-m-d', strtotime($matches[1]));
+        if ($deliveryDate === $today) {
+            return [
+                'status' => 'Out for Delivery',
+                'raw_status' => 'OutForDelivery',
+                'estimated_delivery_date' => $today
+            ];
+        }
+        return [
+            'status' => 'In Transit',
+            'raw_status' => 'InTransit',
+            'estimated_delivery_date' => $deliveryDate
         ];
     }
 

@@ -15,6 +15,7 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $apiKey = $_POST['17track_api_key'] ?? '';
     $claudeApiKey = $_POST['claude_api_key'] ?? '';
+    $showRecipientCity = isset($_POST['show_recipient_city']) ? '1' : '0';
 
     if (empty($apiKey)) {
         $error = '17track Security Key is required';
@@ -25,7 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Save Claude API key (can be empty)
         $setClaudeKey = setUserSetting($user_id, 'claude_api_key', $claudeApiKey);
 
-        if ($setApiKey && $setClaudeKey) {
+        // Save recipient city display preference
+        $setShowCity = setUserSetting($user_id, 'show_recipient_city', $showRecipientCity);
+
+        if ($setApiKey && $setClaudeKey && $setShowCity) {
             $success = 'Settings saved successfully';
         } else {
             $error = 'Failed to save settings';
@@ -37,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $apiKey = getUserSetting($user_id, '17track_api_key', '');
 $claudeApiKey = getUserSetting($user_id, 'claude_api_key', '');
 $secret = getUserSetting($user_id, '17track_secret', '');
+$showRecipientCity = getUserSetting($user_id, 'show_recipient_city', '0') === '1';
 $userTheme = $user['theme'] ?? 'light';
 ?>
 <!DOCTYPE html>
@@ -177,7 +182,13 @@ $userTheme = $user['theme'] ?? 'light';
                     </div>
                 </div>
 
-                <button type="submit" class="btn-save">Save Settings</button>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="showRecipientCity"
+                           name="show_recipient_city" <?= $showRecipientCity ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="showRecipientCity">Show recipient city in package list</label>
+                </div>
+
+                <button type="submit" class="btn-save mt-2">Save Settings</button>
             </form>
         </div>
 

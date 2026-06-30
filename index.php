@@ -13,6 +13,7 @@ $userTheme = $user['theme'] ?? 'light';
 // Check if user has 17track API key set
 $apiKey = getUserSetting($user_id, '17track_api_key', '');
 $hasApiKey = !empty($apiKey);
+$showRecipientCity = getUserSetting($user_id, 'show_recipient_city', '0') === '1';
 
 $currentView = $_GET['view'] ?? 'current';
 if (!in_array($currentView, ['current', 'archive', 'trash'])) {
@@ -715,6 +716,11 @@ if (!empty($tracking['sub_status'])) {
                                                     <?php if ($tracking['last_event_date']): ?>
                                                         <div class="last-update">
                                                             <i class="bi bi-clock"></i> Last update: <?= formatDateTime($tracking['last_event_date']) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showRecipientCity && !empty($tracking['recipient_city'])): ?>
+                                                        <div class="last-update">
+                                                            <i class="bi bi-geo-alt"></i> <?= htmlspecialchars($tracking['recipient_city']) ?>
                                                         </div>
                                                     <?php endif; ?>
                                                 </div>

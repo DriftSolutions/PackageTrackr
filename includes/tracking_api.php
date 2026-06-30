@@ -176,6 +176,7 @@ function parseTrackInfo($tracking) {
         'status' => 'Unknown',
         'raw_status' => null,
         'sub_status' => null,
+        'recipient_city' => null,
         'estimated_delivery_date' => null,
         'delivered_date' => null,
         'events' => [],
@@ -194,6 +195,23 @@ function parseTrackInfo($tracking) {
     // Extract local tracking number from misc_info if present
     if (isset($trackInfo['misc_info']['local_number']) && !empty($trackInfo['misc_info']['local_number'])) {
         $result['local_number'] = $trackInfo['misc_info']['local_number'];
+    }
+
+    // Extract recipient city from recipient_address
+    if (isset($trackInfo['shipping_info']['recipient_address'])) {
+        $addr = $trackInfo['shipping_info']['recipient_address'];
+        $city    = !empty($addr['city'])    ? trim($addr['city'])    : null;
+        $state   = !empty($addr['state'])   ? trim($addr['state'])   : null;
+        $country = !empty($addr['country']) ? trim($addr['country']) : null;
+        if ($city) {
+            if ($state) {
+                $result['recipient_city'] = "{$city}, {$state}";
+            } elseif ($country) {
+                $result['recipient_city'] = "{$city}, {$country}";
+            } else {
+                $result['recipient_city'] = $city;
+            }
+        }
     }
 
     // Get latest status
