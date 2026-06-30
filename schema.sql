@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS tracking_numbers (
     status VARCHAR(100) DEFAULT 'Information Received',
     raw_status VARCHAR(100) DEFAULT 'InfoReceived',
     sub_status VARCHAR(255) DEFAULT NULL,
+    recipient_city VARCHAR(100) DEFAULT NULL,
     view_type ENUM('current', 'archive', 'trash') DEFAULT 'current',
     estimated_delivery_date DATE DEFAULT NULL,
     delivered_date DATE DEFAULT NULL,
