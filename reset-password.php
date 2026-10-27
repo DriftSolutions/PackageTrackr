@@ -17,7 +17,7 @@ $token_valid = false;
 if ($token) {
     $pdo = getDbConnection();
     $stmt = $pdo->prepare("SELECT id FROM users WHERE password_reset_token = ? AND password_reset_token_expires > NOW()");
-    $stmt->execute([$token]);
+    $stmt->execute([hashPasswordResetToken($token)]);
     $user = $stmt->fetch();
 
     if ($user) {
@@ -32,7 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
 
-    if (empty($password) || empty($password_confirm)) {
+    if (!isValidCsrfRequest()) {
+        $error = 'Your session has expired. Please try again.';
+    } elseif (empty($password) || empty($password_confirm)) {
         $error = 'Both password fields are required';
     } elseif ($password !== $password_confirm) {
         $error = 'Passwords do not match';
@@ -170,6 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 
         <?php if ($token_valid): ?>
             <form method="POST">
+                <?= csrfField() ?>
                 <div>
                     <label for="password" class="form-label">New Password</label>
                     <input type="password" id="password" name="password" class="form-control" required

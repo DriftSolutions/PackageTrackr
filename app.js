@@ -1,3 +1,11 @@
+// FormData for api.php POSTs, pre-filled with the page's CSRF token
+function newApiFormData() {
+    const formData = new FormData();
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    formData.append('csrf_token', meta ? meta.content : '');
+    return formData;
+}
+
 // Package name auto-save with debounce
 let saveTimeout = null;
 
@@ -33,7 +41,7 @@ function quickTrackSubmit(event) {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
 
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'add');
     formData.append('tracking_number', trackingNumber);
 
@@ -72,7 +80,7 @@ function addTracking() {
         return;
     }
 
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'add');
     formData.append('tracking_number', trackingNumber);
     if (carrier) formData.append('carrier', carrier);
@@ -101,7 +109,7 @@ function addTracking() {
 function updatePackageName(trackingId, packageName) {
     const input = document.querySelector(`.package-name-input[data-tracking-id="${trackingId}"]`);
 
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'update_name');
     formData.append('id', trackingId);
     formData.append('package_name', packageName);
@@ -151,7 +159,7 @@ function showSaveIndicator(input, success) {
 
 // Move tracking number to different view
 function moveToView(trackingId, view) {
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'move');
     formData.append('id', trackingId);
     formData.append('view', view);
@@ -188,7 +196,7 @@ function deletePermanently(trackingId) {
         return;
     }
 
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'delete');
     formData.append('id', trackingId);
 
@@ -240,7 +248,7 @@ function viewDetails(trackingId) {
             } else {
                 detailsContent.innerHTML = `
                     <div class="alert alert-danger">
-                        ${data.error || 'Failed to load details'}
+                        ${escapeHtml(data.error || 'Failed to load details')}
                     </div>
                 `;
             }
@@ -407,7 +415,11 @@ function refreshTracking(trackingId) {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Refreshing...';
 
-    fetch(`api.php?action=refresh&id=${trackingId}`)
+    const formData = newApiFormData();
+    formData.append('action', 'refresh');
+    formData.append('id', trackingId);
+
+    fetch('api.php', { method: 'POST', body: formData })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -453,7 +465,7 @@ function initLastMileSearch(parentId) {
                     resultsDiv.innerHTML = data.results.map(r => {
                         const name = r.package_name ? escapeHtml(r.package_name) : '';
                         const label = name ? `${name} — ` : '';
-                        return `<button type="button" class="list-group-item list-group-item-action small py-1" onclick="addLastMile(${parentId}, '${escapeHtml(r.tracking_number)}')">
+                        return `<button type="button" class="list-group-item list-group-item-action small py-1" data-tracking-number="${escapeHtml(r.tracking_number)}" onclick="addLastMile(${parentId}, this.dataset.trackingNumber)">
                             ${label}<span class="font-monospace">${escapeHtml(r.tracking_number)}</span>
                             <span class="badge bg-secondary ms-1">${escapeHtml(r.carrier)}</span>
                         </button>`;
@@ -482,7 +494,7 @@ function initLastMileSearch(parentId) {
 
 // Add an existing tracking number as last mile
 function addLastMile(parentId, trackingNumber) {
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'add_last_mile');
     formData.append('parent_id', parentId);
     formData.append('tracking_number', trackingNumber);
@@ -518,7 +530,7 @@ function addLastMile(parentId, trackingNumber) {
 
 // Remove a last mile link
 function removeLastMile(parentId, lastMileId) {
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'remove_last_mile');
     formData.append('parent_id', parentId);
     formData.append('last_mile_id', lastMileId);
@@ -547,7 +559,7 @@ function showAlert(message, type) {
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
     alertDiv.style.zIndex = '9999';
     alertDiv.innerHTML = `
-        ${message}
+        ${escapeHtml(message)}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
 
@@ -576,10 +588,14 @@ function checkEmptyState() {
 }
 
 // Utility functions
+// Escapes for both element content and quoted attribute values
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function formatEventDate(dateString) {
@@ -610,7 +626,7 @@ function toggleTheme() {
     const next = current === 'light' ? 'dark' : 'light';
     applyTheme(next);
 
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'set_theme');
     formData.append('theme', next);
     fetch('api.php', { method: 'POST', body: formData });
@@ -635,7 +651,7 @@ function applyTheme(theme) {
 
 // Toggle outgoing shipment status
 function toggleOutgoing(trackingId) {
-    const formData = new FormData();
+    const formData = newApiFormData();
     formData.append('action', 'toggle_outgoing');
     formData.append('id', trackingId);
 

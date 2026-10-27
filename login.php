@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $remember_me = isset($_POST['remember_me']) && $_POST['remember_me'] === 'on';
 
-    if (empty($email) || empty($password)) {
+    if (!isValidCsrfRequest()) {
+        $error = 'Your session has expired. Please try again.';
+    } elseif (empty($email) || empty($password)) {
         $error = 'Email and password are required';
     } else {
         $result = loginUser($email, $password, $remember_me);
@@ -187,6 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST">
+            <?= csrfField() ?>
             <div>
                 <label for="email" class="form-label">Email Address</label>
                 <input type="email" id="email" name="email" class="form-control" required

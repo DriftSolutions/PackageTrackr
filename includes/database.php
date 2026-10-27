@@ -122,7 +122,32 @@ function moveTrackingNumber($user_id, $id, $viewType) {
         return false;
     }
 
-    return updateTrackingNumber($user_id, $id, ['view_type' => $viewType]);
+    $success = updateTrackingNumber($user_id, $id, ['view_type' => $viewType]);
+
+    if ($success) {
+        // Keep any linked last-mile tracking number's own record in sync
+        // (e.g. archiving/trashing/restoring the parent does the same to it)
+        moveLastMileTrackingNumbers($user_id, $id, $viewType);
+    }
+
+    return $success;
+}
+
+// Move the tracking_numbers row(s) linked as last-mile children of $parentTrackingId
+// into the given view, so archive/trash/restore on the parent cascades to them
+function moveLastMileTrackingNumbers($user_id, $parentTrackingId, $viewType) {
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("UPDATE tracking_numbers tn
+                              INNER JOIN last_mile_tracking lm ON lm.tracking_number = tn.tracking_number
+                              SET tn.view_type = ?
+                              WHERE lm.parent_tracking_id = ? AND tn.user_id = ?");
+        return $stmt->execute([$viewType, $parentTrackingId, $user_id]);
+    } catch (PDOException $e) {
+        error_log("Error moving last mile tracking numbers: " . $e->getMessage());
+        return false;
+    }
 }
 
 // Delete tracking number permanently (verifies user ownership)

@@ -158,7 +158,7 @@ class CarrierRegistry {
      */
     public function getCarrierLogo(string $carrierId): string {
         $carrier = $this->getCarrier($carrierId);
-        return $carrier ? $carrier->getLogoPath() : '';
+        return $carrier ? $carrier->getLogoPath() : 'images/carriers/unknown.png';
     }
 
     /**

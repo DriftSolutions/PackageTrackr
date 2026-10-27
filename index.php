@@ -64,6 +64,7 @@ function getStatusClass($status) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= htmlspecialchars(getCsrfToken()) ?>">
     <title><?= SITE_NAME ?></title>
     <link rel="canonical" href="<?= rtrim(SITE_URL, '/') ?>/">
     <link rel="icon" href="favicon.ico" sizes="any">
@@ -477,7 +478,12 @@ function getStatusClass($status) {
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear"></i> Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                        <li>
+                            <form method="POST" action="logout.php">
+                                <?= csrfField() ?>
+                                <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
                 <?php if ($hasApiKey): ?>
@@ -917,9 +923,12 @@ if (!empty($tracking['sub_status'])) {
             }
 
             function escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
+                return String(str ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
             }
         })();
 

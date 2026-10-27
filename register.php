@@ -18,8 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password_confirm = $_POST['password_confirm'] ?? '';
     $h_captcha_response = $_POST['h-captcha-response'] ?? '';
 
-    // Validate hCaptcha
-    if (!$h_captcha_response) {
+    // Validate CSRF token, then hCaptcha
+    if (!isValidCsrfRequest()) {
+        $error = 'Your session has expired. Please try again.';
+    } elseif (!$h_captcha_response) {
         $error = 'Please complete the hCaptcha verification';
     } else {
         // Verify hCaptcha with server
@@ -202,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST">
+            <?= csrfField() ?>
             <div>
                 <label for="email" class="form-label">Email Address</label>
                 <input type="email" id="email" name="email" class="form-control" required

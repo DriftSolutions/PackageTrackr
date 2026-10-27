@@ -13,6 +13,15 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
     session_start();
 
+    // Server-side idle timeout: drop sessions that have been inactive too long
+    // (the remember-me check below can still restore the login if the user opted in)
+    $idleTimeout = defined('SESSION_IDLE_TIMEOUT') ? SESSION_IDLE_TIMEOUT : 2 * 60 * 60;
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > $idleTimeout) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+    }
+    $_SESSION['last_activity'] = time();
+
     // Check for remember-me token if no active session
     // The cookie contains the raw token; we look it up by its hash in the database.
     if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
@@ -26,7 +35,8 @@ if (session_status() === PHP_SESSION_NONE) {
         $tokenRecord = $stmt->fetch();
 
         if ($tokenRecord) {
-            // Restore session from remember token
+            // Restore session from remember token (new session ID to prevent fixation)
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $tokenRecord['user_id'];
             $_SESSION['email'] = $tokenRecord['email'];
             $_SESSION['login_time'] = time();
@@ -37,7 +47,7 @@ if (session_status() === PHP_SESSION_NONE) {
         } else {
             // The remember-me cookie is invalid or expired. Remove the (stale) entry
             // from the database and clear the cookie so we don't keep checking it.
-            setcookie('remember_token', '', time() - 3600, '/', '', true, true);
+            setRememberCookie('', time() - 3600);
             $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE token = ?");
             $stmt->execute([$tokenHash]);
         }
@@ -50,6 +60,111 @@ if (session_status() === PHP_SESSION_NONE) {
  */
 function hashRememberToken($rawToken) {
     return hash('sha256', $rawToken);
+}
+
+/**
+ * Set (or clear) the remember-me cookie with the same flags as the session cookie.
+ */
+function setRememberCookie($value, $expires) {
+    setcookie('remember_token', $value, [
+        'expires' => $expires,
+        'path' => '/',
+        'secure' => true,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+/**
+ * Hash a password reset token for database storage.
+ * The raw token is only ever sent in the reset email link; the DB stores the hash.
+ */
+function hashPasswordResetToken($rawToken) {
+    return hash('sha256', $rawToken);
+}
+
+/**
+ * Get the CSRF token for the current session, creating it if needed.
+ */
+function getCsrfToken() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Hidden form field carrying the CSRF token, for use inside <form method="POST">.
+ */
+function csrfField() {
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(getCsrfToken()) . '">';
+}
+
+/**
+ * Check that the request is a POST carrying a valid CSRF token
+ * (as a csrf_token form field or an X-CSRF-Token header).
+ */
+function isValidCsrfRequest() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+    $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    return is_string($token) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// Login throttling limits: failed attempts allowed within LOGIN_ATTEMPT_WINDOW seconds
+define('LOGIN_MAX_ATTEMPTS_PER_EMAIL', 5);
+define('LOGIN_MAX_ATTEMPTS_PER_IP', 20);
+define('LOGIN_ATTEMPT_WINDOW', 15 * 60);
+
+/**
+ * Check whether login attempts for this email or client IP are currently throttled.
+ */
+function isLoginThrottled($email, $ip) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("SELECT
+                                  SUM(email = ?) AS email_failures,
+                                  SUM(ip_address = ?) AS ip_failures
+                              FROM login_attempts
+                              WHERE attempted_at > DATE_SUB(NOW(), INTERVAL ? SECOND)
+                                AND (email = ? OR ip_address = ?)");
+        $stmt->execute([$email, $ip, LOGIN_ATTEMPT_WINDOW, $email, $ip]);
+        $row = $stmt->fetch();
+        return (int)$row['email_failures'] >= LOGIN_MAX_ATTEMPTS_PER_EMAIL
+            || (int)$row['ip_failures'] >= LOGIN_MAX_ATTEMPTS_PER_IP;
+    } catch (PDOException $e) {
+        error_log("Error checking login throttle: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Record a failed login attempt, and prune entries older than the throttle window.
+ */
+function recordFailedLogin($email, $ip) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("INSERT INTO login_attempts (email, ip_address) VALUES (?, ?)");
+        $stmt->execute([$email, $ip]);
+        $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL ? SECOND)");
+        $stmt->execute([LOGIN_ATTEMPT_WINDOW]);
+    } catch (PDOException $e) {
+        error_log("Error recording failed login: " . $e->getMessage());
+    }
+}
+
+/**
+ * Clear failed login attempts for an email after a successful login.
+ */
+function clearFailedLogins($email) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE email = ?");
+        $stmt->execute([$email]);
+    } catch (PDOException $e) {
+        error_log("Error clearing failed logins: " . $e->getMessage());
+    }
 }
 
 /**
@@ -160,11 +275,23 @@ function verifyUserEmail($token) {
 function loginUser($email, $password, $remember_me = false) {
     $pdo = getDbConnection();
 
+    $throttleEmail = strtolower(trim($email));
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (isLoginThrottled($throttleEmail, $ip)) {
+        return ['success' => false, 'error' => 'Too many failed login attempts. Please try again in 15 minutes.'];
+    }
+
     $stmt = $pdo->prepare("SELECT id, email, password_hash, is_verified FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
     if (!$user) {
+        recordFailedLogin($throttleEmail, $ip);
+        return ['success' => false, 'error' => 'Invalid email or password'];
+    }
+
+    if (!password_verify($password, $user['password_hash'])) {
+        recordFailedLogin($throttleEmail, $ip);
         return ['success' => false, 'error' => 'Invalid email or password'];
     }
 
@@ -172,14 +299,14 @@ function loginUser($email, $password, $remember_me = false) {
         return ['success' => false, 'error' => 'Please verify your email before logging in'];
     }
 
-    if (!password_verify($password, $user['password_hash'])) {
-        return ['success' => false, 'error' => 'Invalid email or password'];
-    }
+    clearFailedLogins($throttleEmail);
 
     // Clean up any expired remember-me tokens for this user (housekeeping)
     cleanupExpiredRememberTokens($user['id']);
 
-    // Set session
+    // Set session (new session ID and CSRF token to prevent fixation)
+    session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['login_time'] = time();
@@ -197,7 +324,7 @@ function loginUser($email, $password, $remember_me = false) {
         $stmt->execute([$user['id'], $tokenHash, $device_info, $expires_at]);
 
         // Set remember-me cookie (30 days) — raw token only
-        setcookie('remember_token', $remember_token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
+        setRememberCookie($remember_token, time() + (30 * 24 * 60 * 60));
     }
 
     return [
@@ -220,7 +347,7 @@ function logoutUser() {
     }
 
     // Clear remember-me cookie
-    setcookie('remember_token', '', time() - 3600, '/', '', true, true);
+    setRememberCookie('', time() - 3600);
 
     // Destroy session
     session_destroy();
@@ -257,13 +384,13 @@ function requestPasswordReset($email) {
         return ['success' => true, 'message' => 'If an account exists with this email, a reset link has been sent'];
     }
 
-    // Generate reset token
+    // Generate reset token (raw value goes in the email link; DB stores only its hash)
     $reset_token = bin2hex(random_bytes(32));
     $reset_expires = date('Y-m-d H:i:s', time() + PASSWORD_RESET_TOKEN_EXPIRY);
 
     try {
         $stmt = $pdo->prepare("UPDATE users SET password_reset_token = ?, password_reset_token_expires = ? WHERE id = ?");
-        $stmt->execute([$reset_token, $reset_expires, $user['id']]);
+        $stmt->execute([hashPasswordResetToken($reset_token), $reset_expires, $user['id']]);
 
         return [
             'success' => true,
@@ -289,7 +416,7 @@ function resetPassword($token, $newPassword) {
     $stmt = $pdo->prepare("SELECT id, email FROM users
                           WHERE password_reset_token = ?
                           AND password_reset_token_expires > NOW()");
-    $stmt->execute([$token]);
+    $stmt->execute([hashPasswordResetToken($token)]);
     $user = $stmt->fetch();
 
     if (!$user) {

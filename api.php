@@ -17,6 +17,13 @@ if (!$action) {
     exit;
 }
 
+// Every action except read-only lookups must be a POST with a valid CSRF token
+if (!in_array($action, ['details', 'search']) && !isValidCsrfRequest()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Your session has expired. Please reload the page and try again.']);
+    exit;
+}
+
 switch ($action) {
     case 'add':
         handleAdd();
@@ -182,7 +189,7 @@ function handleDetails() {
 function handleRefresh() {
     global $user_id;
 
-    $id = $_GET['id'] ?? null;
+    $id = $_POST['id'] ?? null;
 
     if (!$id) {
         echo json_encode(['success' => false, 'error' => 'ID is required']);

@@ -17,8 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $h_captcha_response = $_POST['h-captcha-response'] ?? '';
 
-    // Validate hCaptcha
-    if (!$h_captcha_response) {
+    // Validate CSRF token, then hCaptcha
+    if (!isValidCsrfRequest()) {
+        $error = 'Your session has expired. Please try again.';
+    } elseif (!$h_captcha_response) {
         $error = 'Please complete the hCaptcha verification';
     } elseif (empty($email)) {
         $error = 'Email address is required';
@@ -211,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?php if (!$email_sent): ?>
             <form method="POST">
+                <?= csrfField() ?>
                 <div>
                     <label for="email" class="form-label">Email Address</label>
                     <input type="email" id="email" name="email" class="form-control" required

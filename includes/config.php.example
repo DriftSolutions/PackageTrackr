@@ -47,6 +47,7 @@ define('HCAPTCHA_SECRET', '');
 
 // Session Configuration
 define('SESSION_TIMEOUT', 30 * 24 * 60 * 60); // 30 days in seconds
+define('SESSION_IDLE_TIMEOUT', 2 * 60 * 60); // Server-side idle timeout (2 hours); remember-me can restore the login
 define('VERIFICATION_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
 define('PASSWORD_RESET_TOKEN_EXPIRY', 24 * 60 * 60); // 24 hours in seconds
 

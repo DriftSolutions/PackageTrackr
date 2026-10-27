@@ -17,7 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $claudeApiKey = $_POST['claude_api_key'] ?? '';
     $showRecipientCity = isset($_POST['show_recipient_city']) ? '1' : '0';
 
-    if (empty($apiKey)) {
+    if (!isValidCsrfRequest()) {
+        $error = 'Your session has expired. Please try again.';
+    } elseif (empty($apiKey)) {
         $error = '17track Security Key is required';
     } else {
         // Save 17track API key
@@ -49,6 +51,7 @@ $userTheme = $user['theme'] ?? 'light';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= htmlspecialchars(getCsrfToken()) ?>">
     <title>Settings - <?= SITE_NAME ?></title>
     <link rel="canonical" href="<?= rtrim(SITE_URL, '/') ?>/settings.php">
     <link rel="icon" href="favicon.ico" sizes="any">
@@ -161,6 +164,7 @@ $userTheme = $user['theme'] ?? 'light';
             <?php endif; ?>
 
             <form method="POST">
+                <?= csrfField() ?>
                 <div>
                     <label for="apiKey" class="form-label">17track Security Key</label>
                     <input type="password" id="apiKey" name="17track_api_key" class="form-control" required

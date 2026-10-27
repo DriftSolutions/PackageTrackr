@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified TINYINT(1) DEFAULT 0,
     verification_token VARCHAR(255) DEFAULT NULL,
     verification_token_expires DATETIME DEFAULT NULL,
-    password_reset_token VARCHAR(255) DEFAULT NULL,
+    password_reset_token VARCHAR(255) DEFAULT NULL, -- SHA-256 hash of the emailed token (see hashPasswordResetToken())
     password_reset_token_expires DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -36,6 +36,18 @@ CREATE TABLE IF NOT EXISTS remember_tokens (
     INDEX idx_user_id (user_id),
     INDEX idx_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Failed login attempts, used to throttle password guessing (see isLoginThrottled() in includes/auth.php).
+-- Rows older than the throttle window are pruned automatically.
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email_time (email, attempted_at),
+    INDEX idx_ip_time (ip_address, attempted_at),
+    INDEX idx_attempted_at (attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User-specific settings table
 -- Sensitive values (e.g. API keys) are now encrypted at rest when ENCRYPTION_KEY is set in config.php.

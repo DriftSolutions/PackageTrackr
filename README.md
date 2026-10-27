@@ -33,7 +33,7 @@ PackageTrackr is a lightweight, self-hosted app to monitor your incoming/outgoin
 
 ## Security
 
-This is mainly designed as a self-hosted app for personal use, so you should protect it with an .htaccess password or something if you can. It doesn't have brute force protection, CSRF protection, etc. When using the email forwarding feature, don't forget that emails are pretty easily spoofed so don't use it to make financial decisions.
+This is mainly designed as a self-hosted app for personal use, so you should protect it with an .htaccess password or something if you can. When using the email forwarding feature, don't forget that emails are pretty easily spoofed so don't use it to make financial decisions.
 
 ## Requirements
 
@@ -61,27 +61,7 @@ This is mainly designed as a self-hosted app for personal use, so you should pro
 
 3. **Configure the application**
    - Copy `includes/config.php.example` to `includes/config.php`
-   - Edit `includes/config.php` with your database credentials and settings:
-     ```php
-     define('SITE_NAME', 'PackageTrackr');
-     define('DB_HOST', 'localhost');
-     define('DB_USER', 'your_db_user');
-     define('DB_PASS', 'your_db_password');
-     define('DB_NAME', 'your_db_name');
-     define('EMAIL_FROM', 'noreply@yourdomain.com');
-     define('TRACKING_EMAIL', 'tracking@yourdomain.com');
-
-     // IMAP settings for the email import cron (see below)
-     define('IMAP_SERVER', 'imap.gmail.com');
-     define('IMAP_PORT', '993');
-     define('IMAP_EMAIL', 'your-tracking-inbox@gmail.com');
-     define('IMAP_PASSWORD', 'your-app-password');
-     define('IMAP_FOLDER', 'INBOX');
-
-     // Application behavior settings
-     define('AUTO_TRASH_DAYS', 30);
-     define('TRASH_RETENTION_DAYS', 90);
-     ```
+   - Edit `includes/config.php` with your database credentials and settings
 
 4. **Set up permissions**
    ```bash

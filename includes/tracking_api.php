@@ -161,6 +161,14 @@ function register17TrackNumber($user_id, $trackingNumber, $carrier) {
         return ['success' => false, 'error' => 'API error: ' . $errorMsg, 'debug' => 'API Code: ' . $data['code'] . ' - ' . $errorMsg, 'tracking' => $trackingNumber];
     }
 
+    // 17track can return top-level code 0 while still rejecting the individual
+    // number (e.g. bad format, unsupported carrier for that number)
+    $rejectedMsg = $data['data']['rejected'][0]['error']['message'] ?? null;
+    if ($rejectedMsg !== null) {
+        error_log("17track Register rejected {$trackingNumber}: " . $rejectedMsg);
+        return ['success' => false, 'error' => 'Registration rejected: ' . $rejectedMsg, 'debug' => 'Rejected: ' . $rejectedMsg, 'tracking' => $trackingNumber, 'carrier' => $carrier];
+    }
+
     return ['success' => true, 'data' => $data];
 }
 
@@ -281,6 +289,12 @@ function parseTrackInfo($tracking) {
 }
 
 // Parse 17track API response and extract relevant information
+// Extract the error message for a tracking number 17track rejected outright
+// (present in data.data.rejected[], separate from top-level API errors)
+function getRejectedTrackingError($apiResponse) {
+    return $apiResponse['data']['data']['rejected'][0]['error']['message'] ?? null;
+}
+
 function parseTrackingResponse($apiResponse) {
     // Debug: Check available keys in response
     if (!isset($apiResponse['data'])) {
@@ -376,8 +390,41 @@ function updateTrackingInfo($user_id, $trackingNumberId) {
     // Fetch from API
     $apiResponse = fetchTrackingInfo($user_id, $tracking['tracking_number'], $tracking['carrier']);
 
+    // 17track can report success at the top level while rejecting the individual
+    // number (e.g. "does not register, please register first."). Detect that,
+    // re-register, and retry once before giving up.
+    $rejectedError = getRejectedTrackingError($apiResponse);
+
+    if ($rejectedError !== null && stripos($rejectedError, 'please register first') !== false) {
+        error_log("17track reports '{$tracking['tracking_number']}' not registered ({$rejectedError}), re-registering and retrying");
+
+        $retryRegisterResult = register17TrackNumber($user_id, $tracking['tracking_number'], $tracking['carrier']);
+
+        if (!$retryRegisterResult['success']) {
+            error_log("Re-registration failed for {$tracking['tracking_number']}: " . $retryRegisterResult['error']);
+        }
+
+        sleep(2);
+
+        $apiResponse = fetchTrackingInfo($user_id, $tracking['tracking_number'], $tracking['carrier']);
+        $rejectedError = getRejectedTrackingError($apiResponse);
+    }
+
     if (!$apiResponse['success']) {
         return $apiResponse;
+    }
+
+    if ($rejectedError !== null) {
+        error_log("17track rejected {$tracking['tracking_number']}: " . $rejectedError);
+        $errorMsg = '17track API error: ' . $rejectedError;
+        $debugMsg = 'Rejected: ' . $rejectedError;
+
+        if (isset($retryRegisterResult) && !$retryRegisterResult['success']) {
+            $errorMsg .= ' (re-registration also failed: ' . $retryRegisterResult['error'] . ')';
+            $debugMsg .= ' | Re-registration failed: ' . ($retryRegisterResult['debug'] ?? $retryRegisterResult['error']);
+        }
+
+        return ['success' => false, 'error' => $errorMsg, 'debug' => $debugMsg, 'tracking' => $tracking['tracking_number']];
     }
 
     // Parse response

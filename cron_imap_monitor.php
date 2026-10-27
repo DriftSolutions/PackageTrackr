@@ -107,21 +107,53 @@ foreach ($emails as $emailNum) {
 	$from_fedex = false;
 
     // Extract From address to determine which user this tracking number belongs to
+    $emailCandidates = [];
     $fromAddress = '';
     if (isset($header->from) && is_array($header->from)) {
         foreach ($header->from as $from) {
             if (isset($from->mailbox) && isset($from->host)) {
-                $fromAddress = $from->mailbox . '@' . $from->host;
-                break;
+		$email = strtolower($from->mailbox . '@' . $from->host);
+		if (!in_array($email, $emailCandidates)) {
+			$emailCandidates[] = $email;
+		}
+		if (empty($fromAddress)) {
+	                $fromAddress = $email;
+		}
+		$n = strpos($from->mailbox, '+');
+		if ($n === FALSE) {
+			$n = strpos($from->mailbox, '-');
+		}
+                if ($n !== false) {
+			$email = strtolower(substr($from->mailbox, 0, $n) . '@' . $from->host);
+			if (!in_array($email, $emailCandidates)) {
+				$emailCandidates[] = $email;
+			}
+                }
             }
         }
     }
+
     $toAddress = '';
     if (isset($header->to) && is_array($header->to)) {
         foreach ($header->to as $to) {
             if (isset($to->mailbox) && isset($to->host)) {
-                $toAddress = $to->mailbox . '@' . $to->host;
-                break;
+		$email = strtolower($to->mailbox . '@' . $to->host);
+		if (!in_array($email, $emailCandidates)) {
+			$emailCandidates[] = $email;
+		}
+		if (empty($toAddress)) {
+	                $toAddress = $email;
+		}
+		$n = strpos($to->mailbox, '+');
+		if ($n === FALSE) {
+			$n = strpos($to->mailbox, '-');
+		}
+                if ($n !== false) {
+			$email = strtolower(substr($to->mailbox, 0, $n) . '@' . $to->host);
+			if (!in_array($email, $emailCandidates)) {
+				$emailCandidates[] = $email;
+			}
+                }
             }
         }
     }
@@ -140,15 +172,19 @@ foreach ($emails as $emailNum) {
 
     logMessage("Processing email #$emailNum: From: '$fromAddress' To: '$toAddress' Subject: '$subject'");
 
-    // Look up user by email address
-    $user = getUserByEmail($fromAddress);
-    if (!$user) {
-        logMessage("  No user found with email: $fromAddress");
-        $user = getUserByEmail($toAddress);
-        $fromAddress = $toAddress;
+    logMessage("emails: ".print_r($emailCandidates, TRUE));
+
+    // Look up user by email address - try all candidates in order
+    $user = null;
+    foreach ($emailCandidates as $candidateEmail) {
+        $user = getUserByEmail($candidateEmail);
+        if ($user) {
+            $fromAddress = $candidateEmail;
+            break;
+        }
+        logMessage("  No user found with email: $candidateEmail");
     }
     if (!$user) {
-        logMessage("  No user found with email: $toAddress");
         $skippedCount++;
         // Mark as read and delete
         imap_setflag_full($imap, $emailNum, "\\Seen");
@@ -426,7 +462,7 @@ function getAmazonStatusFromSubject($subject, $body) {
             'estimated_delivery_date' => $today
         ];
     }
-    if (stripos($subject, 'Delivered:') === 0) {
+    if (stripos($subject, 'Delivered:') === 0 || stripos($subject, 'Delivered ') === 0) {
         return [
             'status' => 'Delivered',
             'raw_status' => 'Delivered',
@@ -461,6 +497,24 @@ function getAmazonStatusFromSubject($subject, $body) {
             'raw_status' => 'InTransit',
             'estimated_delivery_date' => $deliveryDate
         ];
+    }
+    // "Arriving November 2" / "Arriving Nov 2nd"
+    if (preg_match('/\bArriving\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+(\d{1,2})(?:st|nd|rd|th)?\b/i', $body, $matches)) {
+        $monthDay = $matches[1] . ' ' . $matches[2];
+        $year = (int) date('Y');
+        $timestamp = strtotime("$monthDay $year");
+        if ($timestamp !== false) {
+            if (date('Y-m-d', $timestamp) < $today) {
+                $timestamp = strtotime("$monthDay " . ($year + 1));
+            }
+            if ($timestamp !== false) {
+                return [
+                    'status' => 'In Transit',
+                    'raw_status' => 'InTransit',
+                    'estimated_delivery_date' => date('Y-m-d', $timestamp)
+                ];
+            }
+        }
     }
 
     if (stripos($subject, 'Ordered:') === 0) {
